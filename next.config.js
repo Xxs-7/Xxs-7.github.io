@@ -18,6 +18,9 @@ const nextConfig = {
   swcMinify: true,
   assetPrefix,
   basePath,
+  images: {
+    unoptimized: true,
+  },
 };
 
 module.exports = nextConfig;
