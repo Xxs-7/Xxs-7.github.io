@@ -13,6 +13,7 @@ if (isGithubActions) {
 }
 
 const nextConfig = {
+  output: "export",
   reactStrictMode: true,
   swcMinify: true,
   assetPrefix,
