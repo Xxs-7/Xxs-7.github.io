@@ -1,0 +1,87 @@
+---
+title: '用户代理样式表'
+date: '2022-01-01'
+---
+
+# 布局单位
+
+常用的布局单位包括像素（`px`），百分比（`%`），`em`，`rem`，`vw/vh`。
+
+### 一、px
+
+px是最常用的单位：
+
+px，即pixel，像素的意思。
+
+### 像素
+
+有两种，一种是物理像素，一种逻辑像素。 以前一个逻辑像素是等于一个物理像素的。当一个逻辑像素对应多个物理像素的时候，这时候，显示会更清楚。一个逻辑像素对应多少个物理像素，这个叫做 **Device pixel ratio(像素设备比，dpr)**
+
+在开发过程中，css通常使用逻辑像素，也称为设备独立像素。
+
+物理像素单位：
+
+dpi(dot per inch)：点/每英寸 ppi(pixel per inch)：像素/每英寸 dppx:dot per pixel，也称dpr，屏幕的一个像素（**CSS 像素**），需要几个点（**物理像素**）来显示
+
+例如在iPhone4设备屏幕中的物理像素数为640 * 960px，而CSS逻辑像素数为320 * 480像素。因此，使用大约4个物理像素来显示一个CSS像素。(4dppx或者说是4dpr)
+
+dpr可以通过window.devicePixelRatio获取。
+
+### viewport
+
+响应式网站通常要正确设置名称为 viewport 的 meta 信息，才可以正常显示。例如最常用的 viewport 设置方法：
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+```
+
+这行代码涉及3个内容：viewport，width=device-width，initial-scale
+
+上述该meta标签的作用是让当前viewport的宽度等于设备的宽度，同时不允许用户手动缩放。 width=device-width，顾名思义就是把默认的layout viewport的宽度设为移动设备的屏幕宽度。 initial-scale=1，设置页面的初始缩放值为1，缩放是相对于 ideal viewport来进行缩放的，当对ideal viewport进行100%的缩放，也就是缩放值为1的时候，就得到了ideal viewport。
+
+**viewport** 通常是指用户网页的可视区域，简称“视区”,
+
+**viewport** 分为 **layout viewport、visual viewport** 和 **ideal viewport** 三个概念（请见：[ppk关于layout的三个理论](https://www.runoob.com/w3cnote/viewport-deep-understanding.html)）。
+
+**layout viewport**：浏览器默认的viewport，宽度可以通过 `document.documentElement.clientWidth` 来获取。其宽度不一定与屏幕物理宽度一致，因此会出现以下这种情况，原本在PC浏览器上正常显示的页面在手机浏览器查看时浏览器底部出现滚动条。
+
+**visual viewport**：用户直接看到的浏览器的窗口，通过 *visual viewport* 所看到的内容就是 *layout viewport*上的部分内容。
+
+ideal viewport：能完美适配移动设备的 viewport：第一不需要用户缩放和横向滚动条就能正常的查看网站的所有内容；第二，显示的文字和图片的大小是合适的。
+
+### 二、em，rem
+
+em：文本相对长度单位。相对于当前对象内文本的字体尺寸。如果当前行内文本的字体尺寸未被人为设置，则相对于浏览器的默认字体尺寸(默认16px)。（注意font-size可以继承自父元素）
+
+rem：是CSS3新增的一个相对单位，相对于根元素（html元素）的font-size的倍数。利用rem可以实现简单的响应式布局，可以利用html元素中字体的大小与屏幕间的比值来设置font-size的值，以此实现当屏幕分辨率变化时让元素也随之变化。
+
+### 三、vh，vw
+
+**vw/vh**是与视图窗口有关的单位，vw表示相对于视图窗口的宽度，vh表示相对于视图窗口高度，除了vw和vh外，还有vmin和vmax两个相关的单位。 视图窗口：PC端指的是浏览器的可视区域；移动端指的就是Viewport中的Layout Viewport。
+
+- vw：相对于视窗的宽度，视窗宽度是100vw；
+- vh：相对于视窗的高度，视窗高度是100vh；
+- vmin：vw和vh中的较小值；
+- vmax：vw和vh中的较大值；
+
+### 四、百分比 （`%`）
+
+当浏览器的宽度或者高度发生变化时，通过百分比单位可以使得浏览器中的组件的宽和高随着浏览器的变化而变化，从而实现响应式的效果。一般认为子元素的百分比相对于直接父元素。
+
+根 div **节点高度 100% 不生效**
+
+因为其父节点 body，html 默认情况下没有设置高度，默认缺省值 height: auto。
+
+padding，border，margin 如果是 %，则以元素的 width 为计算单位。 
+
+### 如何实现 1px 的线段
+
+参考资料
+
+https://blog.csdn.net/cde7070/article/details/50726058
+
+https://zhuanlan.zhihu.com/p/26131956
+
+https://www.jianshu.com/p/59f316385043
+
+https://www.runoob.com/w3cnote/viewport-deep-understanding.html
