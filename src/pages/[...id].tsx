@@ -1,54 +1,33 @@
-// import Layout from '../../components/layout'
-// import Head from "next/head";
-import MarkdownPage from "@/components/MarkdownPage";
-import { getAllPostIds, getAllPostPath, getPostData } from "../lib/posts";
+import { getAllPostPath } from "@/lib/posts";
+import React from "react";
+import { bundleMDX } from "mdx-bundler";
+import { getMDXComponent } from "mdx-bundler/client";
+import { MDXProvider } from "@mdx-js/react";
+import { MDXComponents } from "@/components/MDX";
 
-// import Date from "../../components/date";
-// import utilStyles from "../../styles/utils.module.css";
-// import { IPostData } from "../../lib/type";
-
-interface IPostProps {
-  postData: {
-    contentHtml: string;
-  };
+interface IPageProps {
+  code: string;
 }
 
-export default function Post({ postData }: IPostProps) {
+export default function Page({ code }: IPageProps) {
+  // it's generally a good idea to memoize this function call to
+  // avoid re-creating the component every render.
+  const Component = React.useMemo(() => getMDXComponent(code), [code]);
   return (
-    // <Page>
-    <MarkdownPage>
-      {<div dangerouslySetInnerHTML={{ __html: postData.contentHtml }} />}
-    </MarkdownPage>
-    // </Page>
+    <div className="flex-1 bg-green-700 overflow-x-hidden">
+      {/* <header> */}
+      {/* <h1>{frontmatter.title}</h1>
+        <p>{frontmatter.description}</p> */}
+      {/* </header> */}
+      {/* <main> */}
+      <Component components={MDXComponents} />
+      {/* </main> */}
+    </div>
   );
-
-  // return (
-  // <Layout>
-  // <div className="bg-[#5699C3] max-w-8xl min-h-screen mx-auto px-4 sm:px-6 md:px-8">
-  //   <Head>
-  //     <title>{postData.title}</title>
-  //   </Head>
-  //   <article className="md:container mx:auto">
-  //     <h1 className={utilStyles.headingXl}>{postData.title}</h1>
-  //     <div className={utilStyles.lightText}>
-  //       <Date dateString={postData.date} />
-  //     </div>
-  //   </article>
-  // </div>
-  // </Layout>
-  // );
 }
 
 export async function getStaticPaths() {
   const paths = getAllPostPath();
-  // console.log("paths", paths2);
-  // const paths = [
-  //   {
-  //     params: {
-  //       id: ["css", "flex"],
-  //     },
-  //   },
-  // ];
   return {
     paths,
     fallback: false,
@@ -56,12 +35,24 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }: any) {
-  const postData = await getPostData(params);
-  console.log(params);
+  const path = require("path");
+  const fs = require("fs");
+  const postsDirectory = path.join(process.cwd(), "posts");
+  const fullPath = path.join(postsDirectory, `${path.join(...params.id)}.mdx`);
+  console.log("fullPath", fullPath);
+  const fileContents = fs.readFileSync(fullPath, "utf8");
+
+  const result = await bundleMDX({
+    source: fileContents,
+  });
+
+  const { code, frontmatter } = result;
+  console.log(frontmatter);
 
   return {
     props: {
-      postData,
+      code,
+      // frontmatter,
     },
   };
 }

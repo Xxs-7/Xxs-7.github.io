@@ -6,71 +6,6 @@ import html from "remark-html";
 
 const postsDirectory = path.join(process.cwd(), "posts");
 
-export function getSortedPostsData() {
-  // Get file names under /posts
-  const fileNames = fs.readdirSync(postsDirectory);
-  const allPostsData = fileNames.map((fileName) => {
-    // Remove ".md" from file name to get id
-    const id = fileName.replace(/\.md$/, "");
-
-    // Read markdown file as string
-    const fullPath = path.join(postsDirectory, fileName);
-    const fileContents = fs.readFileSync(fullPath, "utf8");
-
-    // Use gray-matter to parse the post metadata section
-    const matterResult = matter(fileContents);
-
-    // Combine the data with the id
-    return {
-      id,
-      ...matterResult.data,
-    };
-  });
-  // Sort posts by date
-  return allPostsData.sort((a, b) => {
-    if (a.date < b.date) {
-      return 1;
-    } else {
-      return -1;
-    }
-  });
-}
-
-export function getAllPostIds() {
-  const fileNames = fs.readdirSync(postsDirectory);
-  return fileNames.map((fileName) => {
-    return {
-      params: {
-        id: fileName.replace(/\.md$/, ""),
-      },
-    };
-  });
-}
-
-export async function getPostData({ id }) {
-  console.log("id", id);
-  const fullPath = path.join(postsDirectory, `${path.join(...id)}.md`);
-  // const fullPath = path.join(postsDirectory, `css/flex.md`);
-
-  const fileContents = fs.readFileSync(fullPath, "utf8");
-
-  // Use gray-matter to parse the post metadata section
-  const matterResult = matter(fileContents);
-
-  // Use remark to convert markdown into HTML string
-  const processedContent = await remark()
-    .use(html)
-    .process(matterResult.content);
-  const contentHtml = processedContent.toString();
-
-  // Combine the data with the id and contentHtml
-  return {
-    id,
-    contentHtml,
-    ...matterResult.data,
-  };
-}
-
 export function getAllPostPath() {
   let allPostData = [];
   const postsDirectory = path.join(process.cwd(), "posts");
@@ -81,13 +16,9 @@ export function getAllPostPath() {
 
   booksDir.map((bookDir) => {
     const filesName = fs.readdirSync(path.join(postsDirectory, bookDir));
-    // allPostData.push({
-    //   params: {
-    //     id: bookDir,
-    //   },
-    // });
     const route = filesName.map((fileName) => {
-      const id = fileName.replace(/\.md$/, "");
+      const id = fileName.replace(/\.mdx$/, "");
+      console.log([bookDir, id]);
       // Read markdown file as string
       // const fullPath = path.join(postsDirectory, bookDir, fileName);
       // const fileContents = fs.readFileSync(fullPath, "utf8");
@@ -102,8 +33,6 @@ export function getAllPostPath() {
 
     allPostData.push(...route);
   });
-
-  console.log("allPostData", allPostData);
 
   return allPostData;
 }

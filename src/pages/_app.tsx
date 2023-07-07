@@ -10,14 +10,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export async function getStaticProps() {
-  // const allPostsData = getAllPostData();
-  const allPostsData = ["hello"];
-  return {
-    props: {
-      allPostsData: allPostsData,
-    },
-  };
-}
-
 export default MyApp;
