@@ -14,7 +14,7 @@ export default function Page({ code }: IPageProps) {
   // avoid re-creating the component every render.
   const Component = React.useMemo(() => getMDXComponent(code), [code]);
   return (
-    <div className="flex-1 bg-green-700 overflow-x-hidden">
+    <div className="flex-1 overflow-x-hidden">
       {/* <header> */}
       {/* <h1>{frontmatter.title}</h1>
         <p>{frontmatter.description}</p> */}
@@ -39,15 +39,11 @@ export async function getStaticProps({ params }: any) {
   const fs = require("fs");
   const postsDirectory = path.join(process.cwd(), "posts");
   const fullPath = path.join(postsDirectory, `${path.join(...params.id)}.mdx`);
-  console.log("fullPath", fullPath);
   const fileContents = fs.readFileSync(fullPath, "utf8");
-
   const result = await bundleMDX({
     source: fileContents,
   });
-
   const { code, frontmatter } = result;
-  console.log(frontmatter);
 
   return {
     props: {

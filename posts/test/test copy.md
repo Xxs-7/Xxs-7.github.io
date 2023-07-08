@@ -4,8 +4,6 @@ date: '2022-01-01'
 description: '测试 mdx 组件'
 ---
 
-import Table from '@/components/MDX/table'
-
 标题
 # heading 1
 ## heading 2
@@ -69,5 +67,3 @@ stretch（默认值）：轴线占满整个交叉轴。
 ```html
 <!DOCTYPE html><html lang="en">  <head>    <meta charset="UTF-8" />    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    <title>webpack</title>    <style>      body {        margin: 0;      }      .HolyGrail {        display: flex;        min-height: 100vh;        flex-direction: column;        text-align: center;        vertical-align: center;      }      header,      footer {        flex: 0 0 12em;        background-color: slategrey;      }      .content {        display: flex;        flex: 1;      }      .left,      .right {        flex: 0 0 12em;        background-color: teal;      }      .center {        flex: 1;        background-color: tomato;      }      @media (max-width: 768px) {        .content {          flex-direction: column;          flex: 1;        }        .left,        .rigth,        .center {          flex: auto;        }      }    </style>  </head>  <body>    <div class="HolyGrail">      <header>#header</header>      <div class="content">        <div class="left">#left</div>        <div class="center">#center</div>        <div class="right">#right</div>      </div>      <footer>#footer</footer>    </div>  </body></html>
 ```
-
-<Table/>

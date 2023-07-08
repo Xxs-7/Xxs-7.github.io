@@ -11,7 +11,7 @@ interface INavLink {
 }
 const NavLink = ({ text, href, isActive }: INavLink) => {
   const classes = cn(
-    "block border-l pl-4 -ml-px text-sky-500 border-current font-semibold dark:text-sky-400 hover:bg-gray",
+    "block border-l pl-4 -ml-px  border-current font-semibold dark:text-sky-400 hover:bg-gray",
     { "bg-sky-300": isActive }
   );
   return (
@@ -54,20 +54,22 @@ export default function Nav() {
   const { asPath } = router;
 
   return (
-    <aside>
-      <nav>
-        <ul>
-          {routes.map((book) => (
-            <li className="mt-12 lg:mt-8 " key={book.path}>
-              <Book
-                title={book.title}
-                path={book.path}
-                files={book.routes}
-              ></Book>
-            </li>
-          ))}
-        </ul>
-      </nav>
+    <aside className="hidden lg:block h-screen sticky top-0 lg:bottom-0 w-[19.5rem] ">
+      <div className="dark:bg-gray-600 rounded-md min-h-screen p-2 m-2 overflow-scroll">
+        <nav>
+          <ul>
+            {routes.map((book) => (
+              <li className="mt-12 lg:mt-8 " key={book.path}>
+                <Book
+                  title={book.title}
+                  path={book.path}
+                  files={book.routes}
+                ></Book>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
     </aside>
   );
 }
