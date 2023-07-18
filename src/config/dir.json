@@ -1,188 +1,31 @@
 [
   {
-    "title": "css",
-    "path": "/css",
+    "title": "html",
+    "path": "/posts/html",
     "routes": [
       {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
+        "path": "/posts/html/SemanticsTag",
+        "title": "语义化标签",
+        "date": "2023-07-15"
       }
     ]
   },
   {
     "title": "css",
-    "path": "/css",
+    "path": "/posts/css",
     "routes": [
       {
-        "path": "/css/flex",
+        "path": "/posts/css/flex",
         "title": "flex 布局",
         "date": "2022-01-01"
       },
       {
-        "path": "/css/grid",
+        "path": "/posts/css/grid",
         "title": "grid 布局",
         "date": "2022-01-01"
       },
       {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
-      }
-    ]
-  },
-  {
-    "title": "css",
-    "path": "/css",
-    "routes": [
-      {
-        "path": "/css/flex",
-        "title": "flex 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
-      },
-      {
-        "path": "/css/unit",
+        "path": "/posts/css/unit",
         "title": "用户代理样式表",
         "date": "2022-01-01"
       }

@@ -1,23 +1,162 @@
+import React from "react";
 import cn from "classnames";
-import react from "react";
+import { Highlight, themes } from "prism-react-renderer";
 
 const P = (p: JSX.IntrinsicElements["p"]) => (
   <p className="whitespace-pre-wrap my-2 " {...p} />
 );
-const Code = (p: JSX.IntrinsicElements["div"]) => (
-  <div className="whitespace-pre-wrap my-2" {...p} />
+
+interface IHeadingProps {
+  children: React.ReactNode;
+  id?: string;
+}
+
+const HeadingIcon = () => {
+  return (
+    <svg width="12" height="12" fill="none" aria-hidden="true">
+      <path
+        d="M3.75 1v10M8.25 1v10M1 3.75h10M1 8.25h10"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      ></path>
+    </svg>
+  );
+};
+
+const H1 = ({ children, id }: IHeadingProps) => {
+  console.log("H1", id);
+  return (
+    <h1
+      className="inline-block mdx-heading text-3xl font-extrabold text-slate-900 my-4"
+      id={id}
+    >
+      {children}
+      <a href={`#${id}`} className="inline-block ml-2">
+        <HeadingIcon />
+      </a>
+    </h1>
+  );
+};
+const H2 = ({ children, id }: IHeadingProps) => {
+  return (
+    <h2
+      className="mdx-heading text-2xl font-bold  whitespace-pre-wrap my-3"
+      id={id}
+    >
+      {children}
+      <a href={`#${id}`} className="inline-block">
+        <HeadingIcon />
+      </a>
+    </h2>
+  );
+};
+const H3 = ({ children, id }: IHeadingProps) => {
+  return (
+    <h3
+      className="mdx-heading text-xl font-semibold whitespace-pre-wrap my-2"
+      id={id}
+    >
+      {children}
+      <a href={`#${id}`} className="inline-block">
+        <HeadingIcon />
+      </a>
+    </h3>
+  );
+};
+
+interface IInlineCode {
+  children: React.ReactNode;
+}
+const InlineCode = ({ children }: IInlineCode) => {
+  return (
+    <code
+      className={
+        "inline text-code text-secondary dark:text-secondary-dark px-1 rounded-md no-underline bg-[rgba(135,131,120,0.15)] text-red-500 whitespace-pre-wrap"
+      }
+    >
+      {children}
+    </code>
+  );
+};
+
+interface IBlockCode {
+  children: string;
+  className: string;
+}
+
+const BlockCode = ({ children, className }: IBlockCode) => {
+  return (
+    <React.Suspense
+      fallback={
+        <pre
+          className={cn(
+            "rounded-lg leading-6 h-full w-full overflow-x-auto flex items-center bg-wash dark:bg-gray-95 shadow-lg text-[13.6px] overflow-hidden"
+          )}
+        >
+          <div className="py-[18px] pl-5 font-normal ">
+            <p className="sp-pre-placeholder overflow-hidden">{children}</p>
+          </div>
+        </pre>
+      }
+    >
+      <Highlight
+        theme={themes.shadesOfPurple}
+        code={children}
+        language={className}
+      >
+        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+          <div style={style} className="rounded-md p-4 overflow-x-auto text-xs">
+            {tokens.slice(0, -1).map((line, i) => (
+              <div key={i} {...getLineProps({ line })}>
+                {line.map((token, key) => (
+                  <span
+                    key={key}
+                    {...getTokenProps({ token })}
+                    className="whitespace-pre-wrap"
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </Highlight>
+    </React.Suspense>
+  );
+};
+
+const Code = ({ children, className }: JSX.IntrinsicElements["code"]) => {
+  const languageMatch = /language-(\w+)/.exec(className || "");
+
+  if (!languageMatch) {
+    return <InlineCode children={children} />;
+  }
+
+  return (
+    <BlockCode children={children as string} className={languageMatch[0]} />
+  );
+};
+
+const OL = (p: JSX.IntrinsicElements["ol"]) => (
+  <ol className="ml-6 my-3 list-decimal" {...p} />
 );
-const Strong = (strong: JSX.IntrinsicElements["strong"]) => (
-  <strong className="font-bold" {...strong} />
+
+const UL = (p: JSX.IntrinsicElements["ul"]) => (
+  <ul className="ml-6 my-3 list-disc" {...p} />
+);
+
+const LI = (p: JSX.IntrinsicElements["li"]) => (
+  <li className="leading-relaxed " {...p} />
 );
 
 const Blockquote = ({
   children,
   ...props
 }: JSX.IntrinsicElements["blockquote"]) => {
+  console.log("Blockquote", props);
   return (
     <blockquote
-      className="mdx-blockquote py-4 px-8 my-8 shadow-inner bg-highlight dark:bg-highlight-dark bg-opacity-50 rounded-lg leading-6 flex relative"
+      className="border-l-2 border-current border-solid py-2 px-4 my-2 shadow-inner bg-[rgba(135,131,120,0.15)] dark:bg-highlight-dark bg-opacity-50 flex relative"
       {...props}
     >
       <span className="block relative">{children}</span>
@@ -25,128 +164,35 @@ const Blockquote = ({
   );
 };
 
-interface InlineCodeProps {
-  isLink: boolean;
-}
-function InlineCode({
-  isLink,
-  ...props
-}: JSX.IntrinsicElements["code"] & InlineCodeProps) {
-  return (
-    <code
-      className={cn(
-        "inline text-code text-secondary dark:text-secondary-dark px-1 rounded-md no-underline",
-        {
-          "bg-gray-30 bg-opacity-10 py-px": !isLink,
-          "bg-highlight dark:bg-highlight-dark py-0": isLink,
-        }
-      )}
-      {...props}
-    />
-  );
-}
+const Strong = (strong: JSX.IntrinsicElements["strong"]) => (
+  <strong className="font-bold" {...strong} />
+);
 
-export interface HeadingProps {
-  className?: string;
-  isPageAnchor?: boolean;
-  children: React.ReactNode;
-  id?: string;
-  as?: any;
-}
+const Divider = () => (
+  <hr className="my-6 block border-b border-border dark:border-border-dark" />
+);
 
-const Heading = function Heading({
-  as: Comp = "div",
-  className,
-  children,
-  id,
-  isPageAnchor = true,
-  ...props
-}: HeadingProps) {
-  let label = "Link for this heading";
-  if (typeof children === "string") {
-    label = "Link for " + children;
-  }
-
-  return (
-    <Comp id={id} {...props} className={cn("mdx-heading", className)}>
-      {children}
-      {isPageAnchor && (
-        <a
-          href={`#${id}`}
-          aria-label={label}
-          title={label}
-          className={cn(
-            "mdx-header-anchor",
-            Comp === "h1" ? "hidden" : "inline-block"
-          )}
-        >
-          <svg
-            width="1em"
-            height="1em"
-            viewBox="0 0 13 13"
-            xmlns="http://www.w3.org/2000/svg"
-            className="text-gray-70 ml-2 h-5 w-5"
-          >
-            <g fill="currentColor" fillRule="evenodd">
-              <path d="M7.778 7.975a2.5 2.5 0 0 0 .347-3.837L6.017 2.03a2.498 2.498 0 0 0-3.542-.007 2.5 2.5 0 0 0 .006 3.543l1.153 1.15c.07-.29.154-.563.25-.773.036-.077.084-.16.14-.25L3.18 4.85a1.496 1.496 0 0 1 .002-2.12 1.496 1.496 0 0 1 2.12 0l2.124 2.123a1.496 1.496 0 0 1-.333 2.37c.16.246.42.504.685.752z" />
-              <path d="M5.657 4.557a2.5 2.5 0 0 0-.347 3.837l2.108 2.108a2.498 2.498 0 0 0 3.542.007 2.5 2.5 0 0 0-.006-3.543L9.802 5.815c-.07.29-.154.565-.25.774-.036.076-.084.16-.14.25l.842.84c.585.587.59 1.532 0 2.122-.587.585-1.532.59-2.12 0L6.008 7.68a1.496 1.496 0 0 1 .332-2.372c-.16-.245-.42-.503-.685-.75z" />
-            </g>
-          </svg>
-        </a>
-      )}
-    </Comp>
-  );
+const Table = (p: JSX.IntrinsicElements["table"]) => {
+  return <table className="border-collapse border-gray-300 border-2" {...p} />;
 };
 
-Heading.displayName = "Heading";
-
-export const H1 = ({ className, ...props }: HeadingProps) => (
-  <Heading
-    as="h1"
-    className={cn(className, "text-5xl font-bold leading-tight")}
-    {...props}
-  />
-);
-
-export const H2 = ({ className, ...props }: HeadingProps) => (
-  <Heading
-    as="h2"
-    className={cn(
-      "text-3xl leading-10 text-primary dark:text-primary-dark font-bold my-6",
-      className
-    )}
-    {...props}
-  />
-);
-
-export const H3 = ({ className, ...props }: HeadingProps) => (
-  <Heading
-    as="h3"
-    className={cn(
-      className,
-      "text-2xl leading-9 text-primary dark:text-primary-dark font-bold my-6"
-    )}
-    {...props}
-  />
-);
-
-export const H4 = ({ className, ...props }: HeadingProps) => (
-  <Heading
-    as="h4"
-    className={cn(className, "text-xl font-bold leading-9 my-4")}
-    {...props}
-  />
-);
+const Td = (p: JSX.IntrinsicElements["td"]) => {
+  return <td className="border-gray-300 border-2 p-2" {...p} />;
+};
 
 export const MDXComponents = {
   h1: H1,
   h2: H2,
   h3: H3,
-  h4: H4,
   p: P,
-  string: Strong,
   blockquote: Blockquote,
-  inlineCode: InlineCode,
-  pre: (p: JSX.IntrinsicElements["div"]) => <div {...p} />,
-  // code: Code,
+  strong: Strong,
+  code: Code,
+  li: LI,
+  ol: OL,
+  ul: UL,
+  hr: Divider,
+  table: Table,
+  td: Td,
+  // pre: pre,
 };

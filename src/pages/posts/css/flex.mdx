@@ -43,7 +43,6 @@ flex基础概念
 
 > flex-direction
 > 
-> 
 > flex-wrap
 > 
 > flex-flow
@@ -81,13 +80,11 @@ flex基础概念
 
 假设主轴从左到右（具体对齐方式与主轴的方向有关）：
 
-```
-flex-start（默认值）：左对齐
-flex-end：右对齐
-center： 居中
-space-between：两端对齐，项目之间的间隔都相等。
-space-around：每个项目两侧的间隔相等。所以，项目之间的间隔比项目与边框的间隔大一倍。
-```
+`flex-start`（默认值）：左对齐
+`flex-end`：右对齐
+`center`： 居中
+`space-between`：两端对齐，项目之间的间隔都相等。
+`space-around`：每个项目两侧的间隔相等。所以，项目之间的间隔比项目与边框的间隔大一倍。
 
 ### 3.5 align-items
 
@@ -125,7 +122,7 @@ stretch（默认值）：轴线占满整个交叉轴。
 如下表：
 
 | 条件 |  | 属性（是否有效果） |  |
-| --- | --- | --- | --- |
+| ------ | --- | --- | --- |
 | 子项 | flex容器 | align-items | align-content |
 | 单行 | 不指定高度 | 是 | 否 |
 | 固定高度 | 是 | 是 | 否（但是有设置flex-wrap:wrap;时，有效果） |
@@ -168,7 +165,6 @@ align-items属性是针对单独的每一个flex子项起作用，它的基本�
 `flex`属性是 `flex-grow`, `flex-shrink` 和 `flex-basis`的简写，默认值为 `0 1 auto`。后两个属性可选。
 
 注：flex：1代表什么？
-
 代表均匀分配元素：相当于flex：1 1 任意数字+任意长度单位；
 
 ### 4.6 align-self
@@ -186,13 +182,87 @@ align-self: auto | flex-start | flex-end | center | baseline | stretch;
 !https://www.ruanyifeng.com/blogimg/asset/2015/bg2015071323.png
 
 ```html
-<!DOCTYPE html><html lang="en">  <head>    <meta charset="UTF-8" />    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    <title>webpack</title>    <style>      body {        margin: 0;      }      .HolyGrail {        display: flex;        min-height: 100vh;        flex-direction: column;        text-align: center;        vertical-align: center;      }      header,      footer {        flex: 0 0 12em;        background-color: slategrey;      }      .content {        display: flex;        flex: 1;      }      .left,      .right {        flex: 0 0 12em;        background-color: teal;      }      .center {        flex: 1;        background-color: tomato;      }      @media (max-width: 768px) {        .content {          flex-direction: column;          flex: 1;        }        .left,        .rigth,        .center {          flex: auto;        }      }    </style>  </head>  <body>    <div class="HolyGrail">      <header>#header</header>      <div class="content">        <div class="left">#left</div>        <div class="center">#center</div>        <div class="right">#right</div>      </div>      <footer>#footer</footer>    </div>  </body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webpack</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      .HolyGrail {
+        display: flex;
+        min-height: 100vh;
+        flex-direction: column;
+        text-align: center;
+        vertical-align: center;
+      }
+      header,
+      footer {
+        flex: 0 0 12em;
+        background-color: slategrey;
+      }
+      .content {
+        display: flex;
+        flex: 1;
+      }
+      .left,
+      .right {
+        flex: 0 0 12em;
+        background-color: teal;
+      }
+      .center {
+        flex: 1;
+        background-color: tomato;
+      }
+      @media (max-width: 768px) {
+        .content {
+          flex-direction: column;
+          flex: 1;
+        }
+        .left,
+        .rigth,
+        .center {
+          flex: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="HolyGrail">
+      <header>#header</header>
+      <div class="content">
+        <div class="left">#left</div>
+        <div class="center">#center</div>
+        <div class="right">#right</div>
+      </div>
+      <footer>#footer</footer>
+    </div>
+  </body>
+</html>
 ```
 
 ### 5.2 悬挂式布局
 
 ```html
-<div class="Media">  <img class="Media-figure" src="" alt="">  <p class="Media-body">...</p></div>.Media {  display: flex;  align-items: flex-start;}.Media-figure {  margin-right: 1em;}.Media-body {  flex: 1;}
+<div class="Media">
+  <img class="Media-figure" src="" alt="" />
+  <p class="Media-body">...</p>
+</div>
+<style>
+  .Media {
+    display: flex;
+    align-items: flex-start;
+  }
+  .Media-figure {
+    margin-right: 1em;
+  }
+  .Media-body {
+    flex: 1;
+  }
+</style>
 ```
 
 ### 5.3 流式布局
@@ -200,7 +270,44 @@ align-self: auto | flex-start | flex-end | center | baseline | stretch;
 每行的项目数固定，会自动分行。常见于下拉式图片加载型页面
 
 ```html
-<!DOCTYPE html><html lang="en">  <head>    <meta charset="UTF-8" />    <meta name="viewport" content="width=device-width, initial-scale=1.0" />    <title>webpack</title>    <style>      .parent {        width: 200px;        height: 150px;        background-color: black;        display: flex;        flex-flow: row wrap;        align-content: flex-start;      }      .child {        box-sizing: border-box;        background-color: white;        flex: 0 0 25%;        height: 50px;        border: 1px solid red;      }    </style>  </head>  <body>    <div class="parent">      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>      <div class="child"></div>    </div>  </body></html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webpack</title>
+    <style>
+      .parent {
+        width: 200px;
+        height: 150px;
+        background-color: black;
+        display: flex;
+        flex-flow: row wrap;
+        align-content: flex-start;
+      }
+      .child {
+        box-sizing: border-box;
+        background-color: white;
+        flex: 0 0 25%;
+        height: 50px;
+        border: 1px solid red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parent">
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+      <div class="child"></div>
+    </div>
+  </body>
+</html>
 ```
 
 ### 5.4 百分比布局
