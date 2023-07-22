@@ -3,12 +3,12 @@ import cn from "classnames";
 import { Highlight, themes } from "prism-react-renderer";
 
 const P = (p: JSX.IntrinsicElements["p"]) => (
-  <p className="whitespace-pre-wrap my-2 " {...p} />
+  <p className="whitespace-pre-wrap my-1 " {...p} />
 );
 
 interface IHeadingProps {
   children: React.ReactNode;
-  id?: string;
+  hash?: string;
 }
 
 const HeadingIcon = () => {
@@ -17,48 +17,44 @@ const HeadingIcon = () => {
       <path
         d="M3.75 1v10M8.25 1v10M1 3.75h10M1 8.25h10"
         stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       ></path>
     </svg>
   );
 };
 
-const H1 = ({ children, id }: IHeadingProps) => {
-  console.log("H1", id);
+const H1 = ({ children, hash }: IHeadingProps) => {
   return (
     <h1
-      className="inline-block mdx-heading text-3xl font-extrabold text-slate-900 my-4"
-      id={id}
+      className="mdx-heading text-3xl font-extrabold text-slate-900 my-6"
+      id={hash}
     >
       {children}
-      <a href={`#${id}`} className="inline-block ml-2">
-        <HeadingIcon />
-      </a>
     </h1>
   );
 };
-const H2 = ({ children, id }: IHeadingProps) => {
+const H2 = ({ children, hash }: IHeadingProps) => {
   return (
     <h2
-      className="mdx-heading text-2xl font-bold  whitespace-pre-wrap my-3"
-      id={id}
+      className="mdx-heading text-2xl font-bold whitespace-pre-wrap mt-6 mb-4 group"
+      id={hash}
     >
       {children}
-      <a href={`#${id}`} className="inline-block">
+      <a href={hash} className="hidden pl-2 group-hover:inline-block">
         <HeadingIcon />
       </a>
     </h2>
   );
 };
-const H3 = ({ children, id }: IHeadingProps) => {
+const H3 = ({ children, hash }: IHeadingProps) => {
   return (
     <h3
-      className="mdx-heading text-xl font-semibold whitespace-pre-wrap my-2"
-      id={id}
+      className="mdx-heading text-xl font-semibold whitespace-pre-wrap mt-4 mb-2 group"
+      id={hash}
     >
       {children}
-      <a href={`#${id}`} className="inline-block">
+      <a href={hash} className="hidden pl-2 group-hover:inline-block">
         <HeadingIcon />
       </a>
     </h3>
@@ -153,7 +149,6 @@ const Blockquote = ({
   children,
   ...props
 }: JSX.IntrinsicElements["blockquote"]) => {
-  console.log("Blockquote", props);
   return (
     <blockquote
       className="border-l-2 border-current border-solid py-2 px-4 my-2 shadow-inner bg-[rgba(135,131,120,0.15)] dark:bg-highlight-dark bg-opacity-50 flex relative"

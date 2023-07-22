@@ -52,12 +52,12 @@ function Book({ title, path, files }: IBookProps) {
 export default function Nav() {
   const router = useRouter();
   const { asPath } = router;
-  console.log("Nav", asPath);
+
   return (
     <nav>
-      <ul>
+      <ul className="mt-4">
         {routes.map((book) => (
-          <li className="mt-12 lg:mt-4" key={book.path}>
+          <li className="mt-1" key={book.path}>
             <div
               className={cn(
                 "pl-1 border border-transparent rounded-sm font-bold hover:bg-gray-300",
@@ -70,7 +70,7 @@ export default function Nav() {
                 {book.title}
               </NextLink>
             </div>
-            <ul className="mt-1">
+            <ul className="">
               {book.routes.map((file) => (
                 <li
                   key={file.path}
