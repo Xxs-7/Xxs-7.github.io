@@ -1,0 +1,220 @@
+
+
+> 本文是对 react hook 的发散思考，基础知识见官方文档
+
+# hook
+Hook 是 React 16.8 的新增特性，使得函数组件也能像类组件使用 props 和 state 等特性。
+
+## 为什么引入 hook
+
+  解决长时间使用和维护 react 过程中遇到的问题：
+- 难以重用和共享组件中的与状态相关的逻辑；
+- 逻辑复杂的组件变得难以开发和维护，当我们的组件需要处理个不相关的多个 local state 时，每个生命周期函数中可能包含各种互不相关的逻辑在里面
+- 类组件的 this 增加学习成本，类组件在基于现有工具上的优化存在存在些许问题
+- 由于业务改动，函数组件不得不改变为类组件等
+
+因此，现在的函数组件也可以是有状态的组件，内部也可以维护自身的状态以及做一些逻辑方面的处理。
+
+## `useState`
+为什么不要在循环、条件判断或者子函数中调用 useState?
+
+## `useEffect`
+
+``` JS
+useEffect(() => {
+  // 组件渲染后执行
+
+  return () => {
+    // 组件卸载后执行
+  }
+},[])
+```
+
+**`useEffect` 和 `useLayoutEffect` 的区别**
+
+- `useEffect` 是在 react **完成组件渲染之后**， **异步执行** 的，
+- `useLayoutEffect` 是在 react 把 **组件（更新）真正渲染到界面之前**，**同步执行**的。和 `componentDidMount` 等价。
+
+**`useInsertionEffect`**
+
+`useInsertionEffect` 执行时机比 `useLayoutEffect` 还前
+
+本质上 `useInsertionEffect` 主要是解决 CSS-in-JS 在渲染中注入样式的性能问题。这个 hooks 主要是应用于这个场景，在其他场景下 React 不期望用这个 hooks 。
+
+### 依赖项
+
+* ` ` 空值：不传递依赖项数组将在每次 DOM 更新时运行回调。
+* `[]`: 首次渲染时执行，后续更新不执行
+* `[dep1, dep2,...]`: 依赖项浅比较，新旧不一致时执行。
+
+## `useRef`
+
+### 用法
+1. 保存真实 dom 节点的引用
+
+通过`ref.current`属性访问这个 `ref`的当前变量，这个变量是有意设置为可变的。
+
+为什么只要把`ref`挂到某个react元素上，就可以拿到它的dom？
+源码是如何将 dom 节点挂到 ref.current 上的？
+
+``` JS
+function TextInputWithFocusButton() {
+  const inputEl = useRef(null);
+  const onButtonClick = () => {
+    // `current` 指向已挂载到 DOM 上的文本输入元素
+    inputEl.current.focus();
+  };
+  return (
+    <>
+      <input ref={inputEl} type="text" />
+      <button onClick={onButtonClick}>Focus the input</button>
+    </>
+  );
+}
+
+```
+
+2.存变量
+``` js
+function Timer() {
+  const intervalRef = useRef();
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      // ...
+    });
+    intervalRef.current = id;
+    return () => {
+      clearInterval(intervalRef.current);
+    };
+  });
+
+  // ...
+}
+```
+
+如果将 current 显示到组件上，只变更 current 的值不会触发重新渲染，即 current 被修改了值，显示的内容依然会是旧数据。只在触发重新渲染（state,prop变更)时被组件显示内容才会被刷新。
+
+`createRef` 和 `useRef`
+
+**createRef 每次渲染都会返回一个新的引用，而 useRef 每次都会返回相同的引用。**
+
+createRef 可以在类组件中使用，useRef 只能在函数组件中使用。
+
+## useContext
+用于跨组件（父子孙）传值的一种方式。
+嵌套使用 `useContext`，查找 key 值的方式应该是就近原则：
+``` JS
+import React, { createContext, useContext } from "react";
+
+const context = createContext();
+
+export default function index() {
+  return (
+    <div>
+      <h3>Context test</h3>
+      <context.Provider value={{ value: 1 }}>
+        <Child1 />
+      </context.Provider>
+    </div>
+  );
+}
+
+function Child1() {
+  const { value } = useContext(context);
+  return (
+    <div>
+      child1:{value}
+      <Child2 />
+    </div>
+  );
+}
+
+function Child2() {
+  return (
+    <context.Provider value={{ value: 3 }}>
+      <Child3 />
+    </context.Provider>
+  );
+}
+
+function Child3() {
+  const { value } = useContext(context);
+  return <div>child3:{value}</div>;
+}
+
+// Context test
+// child1:1
+// child3:3
+
+```
+
+## useMemo
+
+缓存需要经过大量计算的值，避免变量作为 `prop` 时重新赋值导致子组件发生多余的重新渲染
+
+## useCallback
+
+缓存函数地址，避免函数作为 `prop` 时重新赋值导致子组件发生多余的重新渲染
+
+## useTransition
+
+
+
+## useDeferredValue
+
+
+
+## useSyncExternalStorePage
+
+订阅外部数据源（store、事件）
+
+1. 监听网络在线
+``` js 
+function subscrbe(callback) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
+function useOnlineStatus() {
+  return useSyncExternalStore(
+    subscrbe,
+    () => navigator.onLine,
+    () => true
+  );
+}
+
+export default function UseSyncExternalStorePage() {
+  const isOnline = useOnlineStatus();
+  // console.log("isOnline", isOnline);
+  return <div>isOnline:{isOnline.toString()}</div>;
+}
+
+```
+
+2. 监听路由变更
+``` js
+function useHistorySelector(selector) {
+  const history = useHistory();
+  return useSyncExternalStore(history.listen, () => selector(history));
+}
+```
+
+3. 监听页面滚动
+``` js
+function subscrbeScroll(onStorageChange) {
+  global?.window.addEventListener("scroll", onStorageChange);
+  return () => global?.window.addEventListener("scroll", onStorageChange);
+}
+```
+
+## 自定义 Hook
+
+
+# 参考资料
+https://zh-hans.legacy.reactjs.org/docs/hooks-reference.html
+

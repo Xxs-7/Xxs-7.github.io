@@ -1,33 +1,44 @@
 [
   {
     "title": "html",
-    "path": "/posts/html",
+    "path": "html",
     "routes": [
       {
-        "path": "/posts/html/SemanticsTag",
-        "title": "语义化标签",
-        "date": "2023-07-15"
+        "path": "html/SemanticsTag",
+        "title": "语义化标签"
+      },
+      {
+        "path": "html/anchor",
+        "title": "锚元素"
       }
     ]
   },
   {
     "title": "css",
-    "path": "/posts/css",
+    "path": "css",
     "routes": [
       {
-        "path": "/posts/css/flex",
+        "path": "css/flex",
         "title": "flex 布局",
         "date": "2022-01-01"
       },
       {
-        "path": "/posts/css/grid",
-        "title": "grid 布局",
-        "date": "2022-01-01"
+        "path": "css/grid",
+        "title": "grid 布局"
       },
       {
-        "path": "/posts/css/unit",
-        "title": "用户代理样式表",
-        "date": "2022-01-01"
+        "path": "css/unit",
+        "title": "用户代理样式表"
+      }
+    ]
+  },
+  {
+    "title": "react",
+    "path": "react",
+    "routes": [
+      {
+        "path": "react/lifecycle",
+        "title": "生命周期"
       }
     ]
   }

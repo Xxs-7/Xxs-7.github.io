@@ -9,8 +9,7 @@ const loader = () => {
       if (node.children[1]) {
         text = node.children[1].value.match(/\/\*(.*?)\*\//)[1];
       }
-      let hash = `#${slug(text)}`;
-      console.log("hash", hash);
+      let hash = slug(text);
 
       const data = node.data || (node.data = {});
       const htmlAttributes = data.htmlAttributes || (data.htmlAttributes = {});

@@ -9,7 +9,6 @@ const remarkToc = (options) => {
       if (node.children[1]) {
         text = node.children[1].value.match(/\/\*(.*?)\*\//)[1];
       }
-      console.log("text", text);
 
       options.exportRef.push({
         text,

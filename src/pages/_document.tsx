@@ -10,9 +10,7 @@ const MyDocument = () => {
   return (
     <Html lang="cn">
       <Head />
-      <body
-      // className="bg-[#5DA5B1] text-[color:#F0EADA]"
-      >
+      <body className=" bg-light text-light-text dark:bg-dark dark:text-dark-text max-sm:text-sm">
         <script
           dangerouslySetInnerHTML={{
             __html: `
