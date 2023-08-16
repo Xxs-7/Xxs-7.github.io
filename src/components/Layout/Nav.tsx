@@ -18,11 +18,11 @@ export default function Nav() {
                 className={classNames(
                   "pl-1 border border-transparent rounded-sm font-bold hover:bg-hover text-lg",
                   {
-                    "text-highlight": asPath === `posts/${book.path}`,
+                    "text-highlight": asPath === `${book.path}`,
                   }
                 )}
               >
-                <NextLink href={`posts/${book.path}`} className="block">
+                <NextLink href={`${book.path}`} className="block">
                   {book.title}
                 </NextLink>
               </div>
@@ -31,13 +31,13 @@ export default function Nav() {
                   <li
                     key={file.path}
                     className={classNames(
-                      "pl-2 border border-transparent rounded-sm hover:bg-hover text-sm py-1",
+                      "pl-2 border border-transparent rounded-sm font-bold hover:bg-hover text-sm py-0.5",
                       {
-                        "text-highlight": asPath.includes(`posts/${file.path}`),
+                        "text-highlight": asPath.includes(`${file.path}`),
                       }
                     )}
                   >
-                    <NextLink href={`posts/${file.path}`} className="block">
+                    <NextLink href={`${file.path}`} className="block">
                       {file.title}
                     </NextLink>
                   </li>

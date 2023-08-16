@@ -8,6 +8,8 @@
 
 ## 生命周期函数
 
+类组件可以包含以下生命周期函数，它们将在组件被渲染时执行。
+
 ### 创建阶段
 
 - **constructor** ：组件挂载前调用
@@ -38,9 +40,23 @@
 - componentWillUpdate
 
 因为 React Fiber 的 **Reconciliation** 有可能导致组件渲染时暂停然后继续执行，所以挂载和更新之前的生命周期钩子就有可能不执行或者多次执行。
-具体分析参考 https://zhuanlan.zhihu.com/p/26027085
+具体分析参考 [React Fiber对现有代码的影响](https://zhuanlan.zhihu.com/p/26027085) 
 
 ## hook 模拟类组件生命周期
+``` js 
+useEffect(()=>{
+  // componentDidMount
+
+  return () => {
+    // componentWillUnmount
+  }
+}, [])
+
+
+useEffect(() => {
+  // componentDidUpdate
+}, [deps..])
+```
 
 ## 参考资料
 https://zh-hans.legacy.reactjs.org/docs/react-component.html#reference

@@ -5,16 +5,6 @@ date: '2022-01-01'
 
 # flex布局
 
-Flex布局教程：
-
-语法篇 https://www.ruanyifeng.com/blog/2015/07/flex-grammar.html 
-
-Flex布局教程：实例篇 https://www.ruanyifeng.com/blog/2015/07/flex-examples.html
-
-以下内容整理自以上两篇博文，并增加了3.7的内容
-
-### 一、 Flex布局
-
 Flex 是 Flexible Box 的缩写，意为“弹性布局”，用来为盒状模型提供最大的灵活性。
 
 任何容器都可以指定为Flex布局
@@ -25,7 +15,7 @@ display: flex;
 // webkit内核display: -webkit-flex; /* safari */
 ```
 
-### 二、基本概念
+## 基本概念
 
 采用 Flex 布局的元素，称为 Flex 容器（flex container），简称“**容器**” 其子元素称为Flex项目，简称“**项目**”
 
@@ -35,9 +25,7 @@ display: flex;
 
 !https://img-blog.csdnimg.cn/20190304184840425.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2NjMTg4Njg4NzY4Mzc=,size_16,color_FFFFFF,t_70
 
-flex基础概念
-
-### 三、容器属性
+## 容器属性
 
 以下6个属性设置在容器上。
 
@@ -54,14 +42,14 @@ flex基础概念
 > align-content
 > 
 
-### 3.1 flex-direction
+### flex-direction
 
 `flex-direction`属性决定主轴的方向（即项目的排列方向）。
 
 > row（默认值）：主轴为水平方向，起点在左端。 row-reverse：主轴为水平方向，起点在右端。 column：主轴为垂直方向，起点在上沿。 column-reverse：主轴为垂直方向，起点在下沿。
 > 
 
-### 3.2 flex-wrap
+### flex-wrap
 
 `flex-wrap`属性决定如果一条轴线排不下，如何换行。
 
@@ -70,11 +58,11 @@ flex基础概念
 `wrap-reverse`：换行，第一行在下方
 > 
 
-### 3.3 flex-flow
+### flex-flow
 
 `flex-flow`属性是 `flex-direction`属性和 `flex-wrap`属性的简写形式，默认值为 `row nowrap`。
 
-### 3.4 justify-content
+### justify-content
 
 `justify-content`属性决定项目在主轴上的对齐方式。
 
@@ -86,7 +74,7 @@ flex基础概念
 `space-between`：两端对齐，项目之间的间隔都相等。
 `space-around`：每个项目两侧的间隔相等。所以，项目之间的间隔比项目与边框的间隔大一倍。
 
-### 3.5 align-items
+### align-items
 
 `align-items`属性定义项目在交叉轴上如何对齐。
 
@@ -100,7 +88,7 @@ baseline: 项目的第一行文字的基线对齐。
 stretch（默认值）：如果项目未设置高度或设为auto，将占满整个容器的高度。
 ```
 
-### 3.6 align-content
+### align-content
 
 `align-content` 属性决定多根轴线的对齐方式。如果项目只有一根轴线，该属性不起作用。
 
@@ -115,7 +103,7 @@ space-around：每根轴线两侧的间隔都相等。所以，轴线之间的�
 stretch（默认值）：轴线占满整个交叉轴。
 ```
 
-### 3.7 align-item 和 align-content 的区别
+### align-item 和 align-content 的区别
 
 参考：https://blog.csdn.net/cc18868876837/article/details/88138057
 
@@ -138,36 +126,36 @@ align-items属性是针对单独的每一个flex子项起作用，它的基本�
 1. align-items 的上下文是行内，align-content 的上下文是弹性盒子容器；
 2. align-items 控制成员的对齐行为，align-content 控制所有行的对齐行为。
 
-### 四、项目属性
+## 项目属性
 
-### 4.1 order
+### order
 
 `order`属性决定项目的排列顺序。数值越小，排列越靠前，默认为0。
 
-### 4.2 flex-grow
+### flex-grow
 
 `flex-grow`属性决定项目的放大比例，默认为 `0`，即如果存在剩余空间，也不放大。
 
 如果所有项目的 `flex-grow`属性都为1，则它们将等分剩余空间（如果有的话）。如果一个项目的 `flex-grow`属性为2，其他项目都为1，则前者占据的剩余空间将比其他项多一倍。
 
-### 4.3 flex-shrink
+### flex-shrink
 
 `flex-shrink`属性决定项目的缩小比例，默认为`1`，即如果空间不足，该项目将缩小。
 
 如果所有项目的 `flex-shrink`属性都为1，当空间不足时，都将等比例缩小。如果一个项目的 `flex-shrink`属性为0，其他项目都为1，则空间不足时，前者不缩小。 负值对该属性无效。
 
-### 4.4 flex-basis
+### flex-basis
 
 `flex-basis`属性决定在分配多余空间之前，项目占据的主轴空间（main size）。浏览器根据这个属性，计算主轴是否有多余空间。它的默认值为 `auto`，即项目的本来大小。
 
-### 4.5 flex
+### flex
 
 `flex`属性是 `flex-grow`, `flex-shrink` 和 `flex-basis`的简写，默认值为 `0 1 auto`。后两个属性可选。
 
 注：flex：1代表什么？
 代表均匀分配元素：相当于flex：1 1 任意数字+任意长度单位；
 
-### 4.6 align-self
+###  align-self
 
 `align-self`属性决定子元素自身在交叉轴的堆砌方式，它允许单个项目有与其他项目不一样的对齐方式，可覆盖 `align-items`属性。默认值为 `auto`，表示继承父元素的 `align-items`属性，如果没有父元素，则等同于 `stretch`。
 
@@ -175,9 +163,11 @@ align-items属性是针对单独的每一个flex子项起作用，它的基本�
 align-self: auto | flex-start | flex-end | center | baseline | stretch;
 ```
 
-### 五、案例分析
+## 案例分析
 
-### 5.1 圣杯布局（圣杯布局最重要是 center 比 left 和 right 优先加载，这里不考虑）
+### 圣杯布局
+
+圣杯布局最重要是 center 比 left 和 right 优先加载，这里不考虑
 
 !https://www.ruanyifeng.com/blogimg/asset/2015/bg2015071323.png
 
@@ -244,7 +234,7 @@ align-self: auto | flex-start | flex-end | center | baseline | stretch;
 </html>
 ```
 
-### 5.2 悬挂式布局
+### 悬挂式布局
 
 ```html
 <div class="Media">
@@ -265,7 +255,7 @@ align-self: auto | flex-start | flex-end | center | baseline | stretch;
 </style>
 ```
 
-### 5.3 流式布局
+### 流式布局
 
 每行的项目数固定，会自动分行。常见于下拉式图片加载型页面
 
@@ -310,6 +300,12 @@ align-self: auto | flex-start | flex-end | center | baseline | stretch;
 </html>
 ```
 
-### 5.4 百分比布局
+### 百分比布局
 
 在固定完某个元素的宽度后，其他同行元素自适应宽度
+
+# 参考资料
+
+语法篇 https://www.ruanyifeng.com/blog/2015/07/flex-grammar.html 
+
+Flex布局教程：实例篇 https://www.ruanyifeng.com/blog/2015/07/flex-examples.html

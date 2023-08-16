@@ -28,7 +28,7 @@
       },
       {
         "path": "css/unit",
-        "title": "用户代理样式表"
+        "title": "布局单位"
       }
     ]
   },
@@ -38,7 +38,31 @@
     "routes": [
       {
         "path": "react/lifecycle",
-        "title": "生命周期"
+        "title": "lifecycle"
+      },
+      {
+        "path": "react/hook",
+        "title": "hook"
+      }
+    ]
+  },
+  {
+    "title": "react 源码",
+    "path": "react-src",
+    "routes": [
+      {
+        "path": "react-src/fiber",
+        "title": "fiber"
+      }
+    ]
+  },
+  {
+    "title": "代码实例",
+    "path": "demo",
+    "routes": [
+      {
+        "path": "demo/music-player",
+        "title": "音乐播放器"
       }
     ]
   }

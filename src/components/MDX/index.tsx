@@ -29,7 +29,10 @@ const HeadingIcon = () => {
 // 但是实际功能是可以增加 props ，但是会导致错误，未能找到解决方法
 const H1 = ({ children, hash }: any) => {
   return (
-    <h1 className="mdx-heading text-3xl font-extrabold my-6" id={hash}>
+    <h1
+      className="mdx-heading text-3xl font-extrabold my-6 text-header dark:text-header-dark"
+      id={hash}
+    >
       {children}
     </h1>
   );
@@ -37,7 +40,7 @@ const H1 = ({ children, hash }: any) => {
 const H2 = ({ children, hash }: any) => {
   return (
     <h2
-      className="mdx-heading text-2xl font-bold whitespace-pre-wrap mt-6 mb-4 group"
+      className="mdx-heading text-2xl font-bold whitespace-pre-wrap mt-6 mb-4 group text-header  dark:text-header-dark"
       id={hash}
     >
       {children}
@@ -50,7 +53,7 @@ const H2 = ({ children, hash }: any) => {
 const H3 = ({ children, hash }: any) => {
   return (
     <h3
-      className="mdx-heading text-xl font-semibold whitespace-pre-wrap mt-4 mb-2 group"
+      className="mdx-heading text-xl font-semibold whitespace-pre-wrap mt-4 mb-2 group text-header dark:text-header-dark"
       id={hash}
     >
       {children}
@@ -90,7 +93,7 @@ const BlockCode = ({ children, className }: IBlockCode) => {
             "rounded-lg leading-6 h-full w-full overflow-x-auto flex items-center  shadow-lg  bg-wash dark:bg-black text-[13.6px] overflow-hidden"
           )}
         >
-          <div className="py-[18px] pl-5 font-normal ">
+          <div className="py-[18px] pl-5 font-normal">
             <p className="sp-pre-placeholder overflow-hidden">{children}</p>
           </div>
         </pre>
@@ -181,6 +184,18 @@ const Td = (p: JSX.IntrinsicElements["td"]) => {
   return <td className="border-gray-300 border-2 p-2" {...p} />;
 };
 
+function Link({ href, children, ...props }: JSX.IntrinsicElements["a"]) {
+  return (
+    <a
+      href={href}
+      {...props}
+      className="hover:underline text-highlight decoration-2 underline-offset-2 decoration-highlight"
+    >
+      {children}
+    </a>
+  );
+}
+
 export const MDXComponents = {
   h1: H1,
   h2: H2,
@@ -195,5 +210,6 @@ export const MDXComponents = {
   hr: Divider,
   table: Table,
   td: Td,
+  a: Link,
   // pre: pre,
 };

@@ -1,0 +1,314 @@
+# fiber 节点
+
+`fiber` 节点就是描述随后要执行的工作的一种数据结构，可以类比于调用栈中的帧。`fiber`
+ 架构同时还提供了便捷的方式去**追踪**，**调度**，**暂停**，**中断 reconcile 过程**
+
+```tsx
+// A Fiber is work on a Component that needs to be done or was done. There can
+// be more than one per component.
+export type Fiber = {
+  // These first fields are conceptually members of an Instance. This used to
+  // be split into a separate type and intersected with the other Fiber fields,
+  // but until Flow fixes its intersection bugs, we've merged them into a
+  // single type.
+
+  // An Instance is shared between all versions of a component. We can easily
+  // break this out into a separate object to avoid copying so much to the
+  // alternate versions of the tree. We put this on a single object for now to
+  // minimize the number of objects created during the initial render.
+
+  // Tag identifying the type of fiber.
+  tag: WorkTag,
+
+  // Unique identifier of this child.
+  key: null | string,
+
+  // The value of element.type which is used to preserve the identity during
+  // reconciliation of this child.
+  elementType: any,
+
+  // The resolved function/class/ associated with this fiber.
+  type: any,
+
+  // The local state associated with this fiber.
+  stateNode: any,
+
+  // Conceptual aliases
+  // parent : Instance -> return The parent happens to be the same as the
+  // return fiber since we've merged the fiber and instance.
+
+  // Remaining fields belong to Fiber
+
+  // The Fiber to return to after finishing processing this one.
+  // This is effectively the parent, but there can be multiple parents (two)
+  // so this is only the parent of the thing we're currently processing.
+  // It is conceptually the same as the return address of a stack frame.
+  return: Fiber | null,
+
+  // Singly Linked List Tree Structure.
+  child: Fiber | null,
+  sibling: Fiber | null,
+  index: number,
+
+  // The ref last used to attach this node.
+  // I'll avoid adding an owner field for prod and model that as functions.
+  ref:
+    | null
+    | (((handle: mixed) => void) & {_stringRef: ?string, ...})
+    | RefObject,
+
+  // Input is the data coming into process this fiber. Arguments. Props.
+  pendingProps: any, // This type will be more specific once we overload the tag.
+  memoizedProps: any, // The props used to create the output.
+
+  // A queue of state updates and callbacks.
+  updateQueue: mixed,
+
+  // The state used to create the output
+  memoizedState: any,
+
+  // Dependencies (contexts, events) for this fiber, if it has any
+  dependencies: Dependencies | null,
+
+  // Bitfield that describes properties about the fiber and its subtree. E.g.
+  // the ConcurrentMode flag indicates whether the subtree should be async-by-
+  // default. When a fiber is created, it inherits the mode of its
+  // parent. Additional flags can be set at creation time, but after that the
+  // value should remain unchanged throughout the fiber's lifetime, particularly
+  // before its child fibers are created.
+  mode: TypeOfMode,
+
+  // Effect
+  flags: Flags,
+  subtreeFlags: Flags,
+  deletions: Array<Fiber> | null,
+
+  // Singly linked list fast path to the next fiber with side-effects.
+  nextEffect: Fiber | null,
+
+  // The first and last fiber with side-effect within this subtree. This allows
+  // us to reuse a slice of the linked list when we reuse the work done within
+  // this fiber.
+  firstEffect: Fiber | null,
+  lastEffect: Fiber | null,
+
+  lanes: Lanes,
+  childLanes: Lanes,
+
+  // This is a pooled version of a Fiber. Every fiber that gets updated will
+  // eventually have a pair. There are cases when we can clean up pairs to save
+  // memory if we need to.
+  alternate: Fiber | null,
+
+  // Time spent rendering this Fiber and its descendants for the current update.
+  // This tells us how well the tree makes use of sCU for memoization.
+  // It is reset to 0 each time we render and only updated when we don't bailout.
+  // This field is only set when the enableProfilerTimer flag is enabled.
+  actualDuration?: number,
+
+  // If the Fiber is currently active in the "render" phase,
+  // This marks the time at which the work began.
+  // This field is only set when the enableProfilerTimer flag is enabled.
+  actualStartTime?: number,
+
+  // Duration of the most recent render time for this Fiber.
+  // This value is not updated when we bailout for memoization purposes.
+  // This field is only set when the enableProfilerTimer flag is enabled.
+  selfBaseDuration?: number,
+
+  // Sum of base times for all descendants of this Fiber.
+  // This value bubbles up during the "complete" phase.
+  // This field is only set when the enableProfilerTimer flag is enabled.
+  treeBaseDuration?: number,
+
+  // Conceptual aliases
+  // workInProgress : Fiber ->  alternate The alternate used for reuse happens
+  // to be the same as work in progress.
+  // __DEV__ only
+
+  _debugSource?: Source | null,
+  _debugOwner?: Fiber | null,
+  _debugIsCurrentlyTiming?: boolean,
+  _debugNeedsRemount?: boolean,
+
+  // Used to verify that the order of hooks does not change between renders.
+  _debugHookTypes?: Array<HookType> | null,
+};
+```
+
+## 前置知识
+
+原生元素（div，span）被认为是 host。也就是看到包含元素含义的变量名中包含 host，说的是原生元素。
+
+fiber 是单链表结构。
+
+## Tag: WorkTag
+
+WorkTag 是 react 源码中的一个枚举类型，用来表示一个 fiber 节点的类型。它的主要作用是辅助 react 在处理更新过程中的各种边界情况（根据类型决定渲染的处理方式）。
+
+例如，在 react 中，一个 fiber 节点可能会表示一个组件，也可能会表示一个元素（例如一个 HTML 标签）。如果一个 fiber 节点表示的是一个类组件，那么它的 WorkTag 就会是 ClassComponent；如果一个 fiber 节点表示的是一个元素，那么它的 WorkTag 就会是 HostComponent。然后 ，如果是类组件，就采用实例化的方式，而函数组件是执行的方式，etc。
+
+通过这种方式，react 可以根据一个 fiber 节点的 WorkTag 来决定如何处理它，从而实现对不同类型节点的特定处理。
+
+> react-reconciler/src/ReactWorkTag.js
+> 
+
+## Key
+
+标志当前节点在当前层级下的唯一性。
+
+1. 帮助 react 在更新时区分同类元素，从而更快地定位到需要更新的元素。
+2. 提高渲染性能，因为 react 可以通过 key 来判断元素是否需要更新，避免对不必要的元素进行渲染。
+3. 提高代码的可维护性和可读性。
+
+## elementType
+
+可以用来区分不同类型的元素，例如 **`div`**、**`span`**等。在组件的渲染过程中，React 会使用**`elementType`**属性来确定该组件应该如何渲染。例如，如果 **`elementType`**的值为 **`div`**，那么 React 就会渲染一个 **`div`** 元素。
+
+## Type
+
+大部分时候和 elementType 一样，标志组件的类型。区分当前组件是类组件，函数组件等，原生标签。
+
+### stateNode
+
+组件对应的 dom 节点，
+
+函数组件 stateNode 为 null
+
+类组件指向实例的 dom 节点
+
+## return
+
+是一个指针，它指向当前组件的父组件。在组件的渲染过程中，React 会使用这个指针来遍历组件的层级关系，最终构建出一颗树形结构，表示整个组件的结构。这个过程称为“收集”，它是 React Fiber 中重要的一个过程。
+
+todo：根据其他代码再丰富解释，目前还是不太明朗。
+
+例如，如果您有一个组件，它包含两个子组件，如下所示：
+
+```jsx
+<Parent>
+  <Child1>
+    <Grandchild />
+  </Child1>
+  <Child2>
+    <Grandchild />
+  </Child2>
+</Parent>
+```
+
+在这种情况下，**`Grandchild`** 组件就会有两个父组件：一个是 **`Parent`** 组件，另一个是 **`Child1`** 或 **`Child2`** 组件。这种情况下，**`Grandchild`** 组件的 **`return`** 属性就会指向两个不同的父组件，也就是说它有可能有两个父组件。
+
+## child
+
+子节点，指向子节点的头节点
+
+## sibling
+
+当前层次的下一个兄弟节点
+
+## index
+
+fiber child 是单链表结构，diff 时需要知道当前节点在当前层级下的位置，dom diff 的时候需要知道节点的位置有没有发生变化。
+
+## ref
+
+## pendingProps:
+
+存储着组件的未更新的属性值。在组件的渲染过程中，如果一个组件的属性值发生了改变，React 会先将新的属性值存储在 **`pendingProps`**
+ 中，然后在下一次渲染时再更新到组件上。这样做的目的是为了让更新更加高效，减少不必要的渲染。
+
+## memorizedProps:
+
+存储着组件的上一次渲染时的属性值。在组件的渲染过程中，React 会使用 **`memorizedProps`**
+ 来对比当前的属性值和上一次的属性值，以确定哪些属性值发生了改变。如果某个属性值发生了改变，React 会将新的属性值存储在 **`pendingProps`**中，等待下一次渲染时再更新到组件上。
+
+## updateQueue
+
+更新的队列，它用于存储待更新的组件。在组件的渲染过程中，如果一个组件的 state 或 props 发生了改变，React 会将该组件添加到 **`updateQueue`** 中，等待下一次更新时再进行渲染。起到了缓存组件更新的作用，帮助 React 更高效地管理组件的渲染。
+
+## memoizedState
+
+存储着组件的上一次渲染时的状态值。在组件的渲染过程中，React 会使用 **`memoizedState`**
+ 来对比当前的状态值和上一次的状态值，以确定哪些状态值发生了改变。如果某个状态值发生了改变，React 会将新的状态值存储在 **`pendingState`**中，等待下一次渲染时再更新到组件上。
+
+如果是类组件，指向 state。
+
+如果是函数组件，指向 hook 的 fiber 头节点。
+
+## dependencies
+
+存储着组件依赖的外部资源的信息。在组件的渲染过程中，React 会使用 **`dependencies`**
+ 属性来确定组件是否需要重新渲染。如果一个组件依赖的外部资源发生了改变，那么 React 就会重新渲染该组件，以确保组件内容始终保持最新。
+
+例如 context。
+
+## Mode
+
+**`Mode`**是一个枚举类型，它用于表示组件当前的渲染模式。React 支持两种渲染模式：同步渲染模式和异步渲染模式。在同步渲染模式下，React 会在组件的渲染过程中立即执行所有更新操作，并立即进行渲染。而在异步渲染模式下，React 会将更新操作推迟到下一个渲染周期中执行，以提高渲染的效率。**`Mode`**属性用于表示组件当前所处的渲染模式，帮助 React 管理组件的渲染过程。
+
+- **`NoMode`**：表示组件处于初始状态，没有进入渲染流程。
+- **`StrictMode`**：表示组件处于严格模式，在这种模式下，React 会对组件的渲染过程进行更严格的检查，并在控制台输出警告信息。
+
+严格模式下的组件会更加注重性能，并且会提醒开发者避免一些常见的错误，例如使用了未经初始化的 state 或 props 等。
+
+## Flag
+
+代表该 fiber 要进行什么操作
+
+代码注释写的是 effect ，副作用，不好理解。
+
+它的值的类型是Flags 类型，是一种特殊的数据类型，用来存储组件的状态信息。它可以包含多个二进制位，每个位都代表着一种状态。例如，一个组件的 Flags 类型的值可能包含 isMounted、hasNewUpdates 等信息，表示组件是否已挂载、是否有新的更新等状态。
+
+在 React 中，Flags 类型通常与 React Fiber 结合使用，用来维护组件的状态信息，以便在下一次渲染时进行更新。
+
+## subtreeFlags
+
+## deletions
+
+需要删除的子节点。
+
+## lanes
+
+它描述了 React 如何在不同的优先级之间分配时间以更新应用的 UI。通过使用 Lanes，React 可以更快地更新 UI，提高应用的性能。
+
+在 React Fiber 中，Lanes 可以有不同的取值，每一个取值都表示一个不同的优先级。例如，可能会有一个 “high priority” 的 lane，表示应用的 UI 将优先于其他内容更新，并且可能会有一个 “low priority” 的 lane，表示应用的 UI 将在其他内容更新完成后再更新。具体来说，Lanes 的取值可以是任意整数，数字越大表示优先级越高。
+
+例如，如果一个 React 应用正在执行一个操作，比如滚动页面，那么这个操作可能会被分配到一个 “high priority” 的 lane 中，这样 React 就可以优先处理滚动操作，保证应用的流畅性。
+
+Lanes 模型通过位掩码来表示任务的优先级。每个任务都有一个 lanes 字段，是一个仅包含一位的位掩码。通过直接操作位掩码，可以解耦任务优先级和批处理概念。例如，可以通过如下代码来判断一个任务是否包含在一组任务中：
+
+**`const isTaskIncludedInBatch = (task & batchOfTasks) !== 0;`**
+
+在 Lanes 模型中，通过对位掩码进行位运算，可以更方便地处理任务优先级和批处理之间的关系。另外，通过位运算，可以更有效地表达任务组，比如在一个范围内表示一组不同的任务。通过 Lanes 模型，我们可以更好地控制任务的执行顺序和优先级，以提高任务的处理效率。
+
+## childLanes
+
+## lanes 模型
+
+### 为什么 lane 取代了以前的 expiration time。
+
+Lanes 模型之所以会取代以前的 expiration time 模型，是因为 Lanes 模型更灵活，可以更好地应对复杂的 UI 更新情况。Expiration time 模型是基于时间的，它会指定一个时间点，在这个时间点之前 React 会将所有的更新都推迟到这个时间点，这样就可能会导致应用 UI 更新变得缓慢或不流畅。
+
+相比之下，lanes 模型很好的解耦了任务优先级和批处理的关系。
+
+并且Lanes 模型分配了一组 lanes，每个 lane 都有不同的优先级，React 可以根据不同的优先级来分配时间去更新应用的 UI，这样就可以更灵活地处理复杂的 UI 更新情况，并且可以提高应用的性能。
+
+总的来说，Lanes 模型比 expiration time 模型更加灵活，可以更好地应对复杂的 UI 更新情况（更好地处理优先级和批处理之间的关系，并且更有效率地表达任务组），提高应用的性能。
+
+> https://github.com/facebook/react/pull/18796
+> 
+> 
+> There are two primary advantages of the Lanes model over the Expiration Times model:
+> 
+> - Lanes decouple the concept of task prioritization ("Is task A higher priority than task B?") from task batching ("Is task A part of this group of tasks?").
+> - Lanes can express many distinct task threads with a single, 32-bit data type.
+
+## alternate
+
+在组件更新时存放老节点，相当于老节点缓存
+
+## ExecutionContext
+
+它描述了当前组件执行时的上下文。ExecutionContext 包含了当前组件的 props、state 以及其他一些相关信息，例如上下文的类型（比如类组件还是函数组件）。
+
+ExecutionContext 可以被用来帮助 React 进行性能优化，例如通过分析 ExecutionContext 来决定哪些组件需要更新，从而避免不必要的组件渲染。

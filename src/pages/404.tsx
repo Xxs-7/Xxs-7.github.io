@@ -1,9 +1,7 @@
-import MarkdownPage from "@/components/MarkdownPage";
+import Layout from "@/components/Layout";
 
 export default function NotFound() {
   return (
-    <MarkdownPage>
-      <p>Page not found</p>
-    </MarkdownPage>
+    <p className="mdx-heading text-3xl font-extrabold my-6 ">Page not found</p>
   );
 }

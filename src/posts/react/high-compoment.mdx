@@ -1,0 +1,115 @@
+# 高阶组件
+
+react 为什么要用 hook，其原因之一就是为了能更好的复用代码逻辑。
+
+以下是实现代码逻辑复用的一些方案。
+
+## mixin
+
+```jsx
+var mixinDefaultProps = {
+    getDefaultProps: function(){
+        return {displayName: 'component'}
+    }
+}
+
+var ExampleComponent = React.createClass({
+    mixins: [mixinDefaultProps],
+    render: function(){
+        return <div>{this.props.displayName}</div>
+    }
+});
+链接：https://juejin.cn/post/6844903471162851342
+```
+
+`ExampleComponent` 组件的`props`中都含有一个默认的`displayName`
+
+缺点
+
+- 多个 Mixin 之间可能产⽣冲突，⽐如：多个 Mixin 中定义了相同的 state 字段，在一个组件中同时引入这些 Mixin 后会产生字段冲突。
+    
+    对于非生命周期函数，如果命名出现冲突，直接报错。
+    
+- 组件与 Mixin 之间存在隐式依赖（Mixin 经常依赖于组件的特定⽅法，但在定义组件时并不知道这种依赖关系）
+- Mixin 倾向于增加更多状态，这降低了应⽤的可预测性，状态越多越难管理和溯源，复杂度剧增
+- 隐式依赖导致依赖关系不透明，维护成本和理解成本迅速攀升：
+    - 难以快速理解组件的⾏为，需要全盘了解所有依赖 Mixin 的扩展⾏为及其之间的相互影响
+    - 组件⾃身的⽅法和 state 字段不敢轻易删改，因为难以确定有没有 Mixin 依赖它
+    - Mixin 也难以维护，因为 Mixin 逻辑最后会被摊平合并到⼀起，很难搞清楚⼀个 Mixin 的输⼊输出
+
+## Hoc
+
+优点：
+
+相⽐ Mixin，HoC 通过外层组件传递 props 来影响内层组件的状态，⽽不是直接改变其 state，这就不存在冲突和互相⼲扰，降低了耦合度。不同于 Mixin 的打平 + 合并，HoC 天然具有层级结构（组件树结构），这⼜降低了复杂度。
+
+缺点：
+
+扩展性限制：HoC ⽆法从外部访问⼦组件的 state，因此⽆法通过 shouldComponentUpdate 滤掉不必要的更新；React 在⽀持ES6 Class 之后提供了 React.PureComponent 解决了这个问题
+
+Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了这个问题
+
+包装地狱（Wrapper Hell）：和回调函数类似，HoC 如果出现多层包裹组件的情况，就会和回调函数一样层层嵌套；而这种多层抽象同样也增加了复杂度和理解成本
+
+命名冲突：如果⾼阶组件多次嵌套而没有使⽤命名空间，就可能会产⽣冲突，覆盖⽼的属性
+
+不可⻅性：HoC 相当于在原有组件外层再包装⼀个组件，你有可能压根都不知道外层的包装是什么，对于你来说完全是⿊盒
+
+## **render props 模式**
+
+- 将要复用的 state 和操作 state 的方法封装到一个组件中
+- 对组件向外暴露 state 和操作state的方法(子组件向父组件传递数据)：调用 props 的 render 方法
+    
+    ```
+    render() {
+        return (
+            <div>
+                // 对外暴露了，组件状态和操作组件状态的方法
+                { this.props.render(this.state.count, this.handleCount) }
+            </div>
+        )
+    }
+    复制代码
+    ```
+    
+- 调用父组件传递进来的函数，把 state 和操作 state 的方法作为函数参数传递进去
+    
+    ```
+    <div>
+        <Counter
+            render={(count, handleCount) => {
+                return <button onClick={handleCount}> 我被点击了{count}次</button>
+            }}
+        />
+    </div>
+    复制代码
+    ```
+    
+缺点：
+
+- 使用繁琐: HOC使用只需要借助装饰器语法通常一行代码就可以进行复用,Render Props无法做到如此简单
+- 嵌套过深: Render Props虽然摆脱了组件多层嵌套的问题,但是转化为了函数回调的嵌套
+
+## React Hooks
+
+优点：
+
+1. 简洁：React Hooks 解决了 HoC 和 Render Props 的嵌套问题，代码更加简洁
+2. 解耦：React Hooks 可以更⽅便地把 UI 和状态分离，做到更彻底的解耦
+3. 组合：Hooks 中可以通过引⽤另外的 Hooks 以此形成新的 Hooks，变化丰富
+4. 函数友好：React Hooks 为函数组件⽽⽣，从⽽解决了类组件的⼏⼤问题:
+- this 指向容易错误
+- 分割在不同声明周期中的逻辑会使得代码难以理解和维护
+- 代码复⽤成本⾼（⾼阶组件容易使代码量剧增）
+
+缺点：
+
+1. 有额外的学习成本（需要学习和区分类组件、函数组件）
+2. 写法上有限制（不能出现在条件、循环中），并且这种写法限制会增加代码重构时的成本
+3. 破坏了 PureComponent、React.memo 浅⽐较的性能优化效果（为了获取最新的 props 和 state，每次 render() 都要重新
+
+创建事件处理函数）
+
+1. 在闭包场景中可能会引⽤到旧的 state、props 值
+内部实现上不直观（依赖⼀份可变的全局状态，不再那么“纯”）
+2. React.memo 并不能完全替代 shouldComponentUpdate（因为获取不到 state 的变化，只针对 props 的变化）

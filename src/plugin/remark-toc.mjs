@@ -12,7 +12,7 @@ const remarkToc = (options) => {
 
       options.exportRef.push({
         text,
-        hash: `#${slug(text)}`,
+        hash: `#${slug(text.trim())}`,
         depth: node.depth,
       });
     });

@@ -1,0 +1,59 @@
+# 渲染过程
+
+react 的渲染过程主要分为两个阶段：render（或称 Reconcile） 阶段和 Commit 阶段。
+
+
+
+
+
+commit 阶段。
+
+commitBeforeMutationEffects
+commitMutationEffects
+commitLayoutEffects
+
+作者：runnerdancer
+链接：https://juejin.cn/post/7109779698879725599
+来源：稀土掘金
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+> 前端框架的渲染指的是将数据和模版拼接到一起呈现到页面上。
+
+
+## render
+
+在 render 阶段，React 会通过 Diff 算法比较新旧虚拟 DOM 树，找出差异，并构建 Fiber 树。每个 Fiber 节点表示组件树中的一个组件或 DOM 节点，并包含了比对结果所要进行修改真实 dom 的相关信息。
+
+**核心函数** 是 react/packages/react-reconciler/src/ReactFiberReconciler 中的`performUnitOfWork`，函数内执行了两个重要函数 `beginWork` 和`completeUnitOfWork`
+
+`beginWork`
+
+对 fiber 树自上而下遍历子节点，对每个 fiber 处理了以下内容：
+* 根据当前工作的 fiber 节点最新的 react element 子元素和旧的 fiber 子元素进行比较以决定是否复用旧的 fiber 节点，
+* 标记 fiber 节点是否有副作用 effectTag。
+* 如果是类组件或者函数组件，则需要调用类组件实例的 render 方法或者执行函数组件获取最新的 react element 子元素
+
+`completeUnitOfWork`
+
+
+
+对于 HostComponent。比较 newProps 和 oldProps，收集发生变更的属性键值对，并存储在 fiber.updateQueue 中
+构建副作用链表。自底向上找出有副作用的 fiber 节点，并构建单向链表
+
+render 阶段的结果是一个副作用链表 `effectList` 以及一棵 fiber 树 `finishedWork`
+
+
+## Commit 
+
+**核心函数**
+* `commitBeforeMutationEffects`
+* `commitMutationEffects`
+* `commitLayoutEffects`
+
+在提交阶段，React 将协调阶段中构建的 Fiber 树转化为实际的 DOM 更新。React 会遍历 Fiber 树，并根据需要执行更新操作。
+
+渲染阶段的工作原理如下：
+
+提交阶段：在渲染阶段，React 遍历 Fiber 树，执行实际的 DOM 操作，包括创建、更新和删除节点。这些更新操作被称为提交（Commit）。
+
+批量更新：React 尽可能地批量处理多个更新操作，以减少对实际 DOM 的操作次数。这样可以提高性能和优化渲染的效率。

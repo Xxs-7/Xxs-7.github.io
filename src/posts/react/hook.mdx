@@ -1,7 +1,3 @@
-
-
-> 本文是对 react hook 的发散思考，基础知识见官方文档
-
 # hook
 Hook 是 React 16.8 的新增特性，使得函数组件也能像类组件使用 props 和 state 等特性。
 
@@ -159,10 +155,72 @@ function Child3() {
 
 ## useTransition
 
+react 18 把 update 分为两种类型
 
+- **Urgent updates** 紧急更新，指直接交互，通常指的用户交互。如点击、输入等。这种更新一旦不及时，用户就会觉得哪里不对。
+- **Transition updates** 过渡更新，如UI从一个视图向另一个视图的更新。通常这种更新用户并不着急看到。
+
+``` js
+function TransitionPage() {
+  const [isPending, setStartTransition] = useTransition();
+  return (
+    <div>
+      <h3>TransitionPage</h3>
+
+      <button
+        disabled={isPending}
+        onClick={() => setStartTransition(() => setresource(fetchData()))}
+      >
+        click
+      </button>
+    </div>
+  );
+}
+```
 
 ## useDeferredValue
 
+延迟更新 UI 的某些部分。
+
+使用 query 的组件更新优先渲染，使用 deferredQuery 的组件更新延迟渲染
+```jsx
+import { useState, useDeferredValue } from 'react';
+
+function SearchPage() {
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  // ...
+}
+```
+
+结合 suspend 组件
+```jsx
+import { Suspense, useState, useDeferredValue } from 'react';
+import SearchResults from './SearchResults.js';
+
+export default function App() {
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  // isStale 表示当前显示的内容是否过时
+  const isStale = query !== deferredQuery;
+  return (
+    <>
+      <label>
+        Search albums:
+        <input value={query} onChange={e => setQuery(e.target.value)} />
+      </label>
+      <Suspense fallback={<h2>Loading...</h2>}>
+        <div style={{
+          opacity: isStale ? 0.5 : 1,
+          transition: isStale ? 'opacity 0.2s 0.2s linear' : 'opacity 0s 0s linear'
+        }}>
+          <SearchResults query={deferredQuery} />
+        </div>
+      </Suspense>
+    </>
+  );
+}
+```
 
 
 ## useSyncExternalStorePage
@@ -206,9 +264,33 @@ function useHistorySelector(selector) {
 
 3. 监听页面滚动
 ``` js
-function subscrbeScroll(onStorageChange) {
-  global?.window.addEventListener("scroll", onStorageChange);
-  return () => global?.window.addEventListener("scroll", onStorageChange);
+import { useSyncExternalStore } from "react";
+
+function subscribe(onStoreChange) {
+  global.window?.addEventListener("scroll", onStoreChange);
+  return () => global.window?.removeEventListener("scroll", onStoreChange);
+}
+function useScrollY(getY = (id) => id) {
+  return useSyncExternalStore(
+    subscribe,
+    () => getY(global.window?.scrollY),
+    () => undefined
+  );
+}
+
+export default function useSyncExternalStorePage() {
+  const scrollY = useScrollY();
+
+  return (
+    <>
+      {Array.from({ length: 100 }).map((value, index) => {
+        return <p key={index}>占位符</p>;
+      })}
+      <div style={{ position: "fixed", bottom: "0px", right: "0px" }}>
+        <div>{scrollY}</div>
+      </div>
+    </>
+  );
 }
 ```
 
