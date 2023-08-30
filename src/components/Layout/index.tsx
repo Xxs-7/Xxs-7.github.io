@@ -1,6 +1,4 @@
-import classNames from "classnames";
 import Nav from "./Nav";
-import Toc from "./Toc";
 import Header from "./header";
 
 interface ILayoutProps {

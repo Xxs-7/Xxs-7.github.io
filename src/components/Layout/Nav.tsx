@@ -16,7 +16,7 @@ export default function Nav() {
             <li className="mt-1" key={book.path}>
               <div
                 className={classNames(
-                  "pl-1 border border-transparent rounded-sm font-bold hover:bg-hover text-lg",
+                  "pl-1 border border-transparent rounded-sm font-bold hover:bg-dark/5 text-lg hover:dark:bg-light/5",
                   {
                     "text-highlight": asPath === `${book.path}`,
                   }
@@ -31,7 +31,7 @@ export default function Nav() {
                   <li
                     key={file.path}
                     className={classNames(
-                      "pl-2 border border-transparent rounded-sm font-bold hover:bg-hover text-sm py-0.5",
+                      "pl-2 border border-transparent rounded-sm font-bold hover:bg-dark/5 text-sm py-0.5 hover:dark:bg-light/5",
                       {
                         "text-highlight": asPath.includes(`${file.path}`),
                       }

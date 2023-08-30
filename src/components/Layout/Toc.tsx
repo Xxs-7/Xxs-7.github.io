@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useSyncExternalStore } from "react";
 import cn from "classnames";
-import NextLink from "next/link";
 import { useRouter } from "next/router";
 import classNames from "classnames";
 import _ from "lodash";
