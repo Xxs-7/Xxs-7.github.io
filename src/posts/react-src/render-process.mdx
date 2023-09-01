@@ -2,20 +2,11 @@
 
 react 的渲染过程主要分为两个阶段：render（或称 Reconcile） 阶段和 Commit 阶段。
 
-
-
-
-
 commit 阶段。
 
 commitBeforeMutationEffects
 commitMutationEffects
 commitLayoutEffects
-
-作者：runnerdancer
-链接：https://juejin.cn/post/7109779698879725599
-来源：稀土掘金
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
 
 > 前端框架的渲染指的是将数据和模版拼接到一起呈现到页面上。
 
@@ -57,3 +48,6 @@ render 阶段的结果是一个副作用链表 `effectList` 以及一棵 fiber �
 提交阶段：在渲染阶段，React 遍历 Fiber 树，执行实际的 DOM 操作，包括创建、更新和删除节点。这些更新操作被称为提交（Commit）。
 
 批量更新：React 尽可能地批量处理多个更新操作，以减少对实际 DOM 的操作次数。这样可以提高性能和优化渲染的效率。
+
+## 参考资料
+https://juejin.cn/post/7109779698879725599

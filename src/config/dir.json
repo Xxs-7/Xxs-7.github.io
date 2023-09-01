@@ -4,11 +4,11 @@
     "path": "html",
     "routes": [
       {
-        "path": "html/SemanticsTag",
+        "path": "SemanticsTag",
         "title": "语义化标签"
       },
       {
-        "path": "html/anchor",
+        "path": "anchor",
         "title": "锚元素"
       }
     ]
@@ -18,16 +18,16 @@
     "path": "css",
     "routes": [
       {
-        "path": "css/flex",
+        "path": "flex",
         "title": "flex 布局",
         "date": "2022-01-01"
       },
       {
-        "path": "css/grid",
+        "path": "grid",
         "title": "grid 布局"
       },
       {
-        "path": "css/unit",
+        "path": "unit",
         "title": "布局单位"
       }
     ]
@@ -37,11 +37,11 @@
     "path": "react",
     "routes": [
       {
-        "path": "react/lifecycle",
+        "path": "lifecycle",
         "title": "lifecycle"
       },
       {
-        "path": "react/hook",
+        "path": "hook",
         "title": "hook"
       }
     ]
@@ -51,18 +51,38 @@
     "path": "react-src",
     "routes": [
       {
-        "path": "react-src/fiber",
-        "title": "fiber"
+        "path": "architecture",
+        "title": "源码架构"
+      },
+      {
+        "path": "virtual-dom",
+        "title": "虚拟 dom"
+      },
+      {
+        "path": "fiber-node",
+        "title": "fiber 节点"
+      },
+      {
+        "path": "render-mode",
+        "title": "渲染模式"
+      },
+      {
+        "path": "scheduler",
+        "title": "scheduler"
       }
     ]
   },
   {
-    "title": "代码实例",
+    "title": "实践经验",
     "path": "demo",
     "routes": [
       {
-        "path": "demo/music-player",
+        "path": "music-player",
         "title": "音乐播放器"
+      },
+      {
+        "path": "font-advance",
+        "title": "字体库优化"
       }
     ]
   }

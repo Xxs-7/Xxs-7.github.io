@@ -1,33 +1,38 @@
-# virtual dom
+# Reconciler
 
-Virtual DOM 是真实 dom 的内存虚拟表示。本质是 javascript 对象，描述了真实 DOM 的信息和结构。其用处是在需要更新页面内容时，通过先修改 virtual dom 对象，通过 dom diff 算法计算新旧 virtual dom 之间的差异，最后根据差异更新真实 dom。
+> 前端框架的渲染指的是将数据和模版拼接到一起呈现到页面上。
+
+## virtual dom
+
+Virtual DOM 是真实 dom 的内存虚拟表示。本质是 javascript 对象，描述了真实 DOM 的信息和结构。
+其用处是在需要更新页面内容时，通过先修改 virtual dom 对象，通过 dom diff 算法计算新旧 virtual dom 之间的差异，最后根据差异更新真实 dom。
 
 ## 为什么 virtual dom 能提升性能
 
-1. vitual dom 相当于 js 和真实 dom 之间增加了一层缓存，避免了没有必要 的 dom 操作
+1. vitual dom 相当于 js 和真实 dom 之间增加了一层缓存，避免了没有必要的 dom 操作
 2. vitual dom 到真实 dom 的更新是批处理，通过减少频繁操作 dom 来提升性能。
 
 ## dom diff
 
 当组件发生变更，形成一棵新的 vitual dom，就会使用`diff`算法对新旧两棵树进行对比，根据对比结果修改更新真实`DOM`。
 
-### diff的几种策略
+## diff 的几种策略
 
 - `Web UI`中`DOM`节点跨层级的移动操作特别少，可以忽略不计。
 - 拥有相同类型的两个组件将会生成相似的树形结构，拥有不同类型的两个组件将会生成不同的树形结构。
 - 对于同一层级的一组子节点，它们可以通过唯一`id`进行区分
 
-**Tree diff**
+### Tree diff
 
 基于第一个策略，`react`只会对同一层次的节点进行比较，当发现节点不存在时，就会删除整个节点及其子节点，不会再进行比较，这样就只需要遍历一次，就能完成对整个`DOM`树的比较。也就是只考虑创建删除操作，不考虑变更位置。
 
-**component diff**
+### Component diff
 
-- 如果是同一类型的组件，按照原策略继续比较虚拟dom树
+- 如果是同一类型的组件，按照原策略继续比较虚拟 dom 树
 - 如果不是，则将该组件判断为`dirty component`，从而替换整个组件下的所有子节点
 - 对于同一类型的组件，有可能其`Virtual DOM`没有任何变化，如果能够确切的知道这点那可以节省大量的`diff`运算的时间，因此`React`允许用户通过`shouldComponentUpdate()`判断该组件是否需要进行`diff`
 
-**element diff**
+### Element diff
 
 当节点处于同一层级时，`React diff`提供了三种节点操作：插入、移动和删除
 
@@ -35,16 +40,16 @@ Virtual DOM 是真实 dom 的内存虚拟表示。本质是 javascript 对象，
 - 移动：在老集合里有新`component`类型，且`element`是可更新的类型，`generateComponentChildren`已调用`receiveComponent`，这种情况下`prevChild=nextChild`，就需要做移动操作，可以复用以前的`dom`节点
 - 删除：老的`component`类型，在新集合中也有，但对应的`element`不同则不能直接复用和更新，需要执行删除操作，或者老`component`不在新集合里，也需要执行删除操作
 
-### 同层级节点的diff 过程
+## 同层级节点的 diff 过程
 
-**首先明确下数据结构：新vdom是数组，即newChildren；老vdom是fiber单链表，即oldFiber。**
+**首先明确下数据结构：新 vdom 是数组，即 newChildren；老 vdom 是 fiber 单链表，即 oldFiber。**
 
-1. 新老VDOM都是从左边开始遍历的，按位置比较，即第i个老vdom和第i个新vdom比较，如果节点可以复用，那么先复用，然后新老vdom都往后移一位，否则就中止本轮循环。
+1. 新老 VDOM 都是从左边开始遍历的，按位置比较，即第 i 个老 vdom 和第 i 个新 vdom 比较，如果节点可以复用，那么先复用，然后新老 vdom 都往后移一位，否则就中止本轮循环。
 
-2. 如果经过step1，新节点已经遍历完了，那么如果还有剩下的老节点，删除即可。
+2. 如果经过 step1，新节点已经遍历完了，那么如果还有剩下的老节点，删除即可。
 
-3. 如果经过step1，老节点没了，新节点还有，那么新节点逐个新增即可。初次渲染走的就是这里。
+3. 如果经过 step1，老节点没了，新节点还有，那么新节点逐个新增即可。初次渲染走的就是这里。
 
-4. 走到现在，新老节点都还有，但是是乱序的。因此可以把oldFiber单链表做成Map，即existingChildren，接下来遍历newChildren，找到能复用的fiber，就复用并且从existingChildren删除这个fiber。
+4. 走到现在，新老节点都还有，但是是乱序的。因此可以把 oldFiber 单链表做成 Map，即 existingChildren，接下来遍历 newChildren，找到能复用的 fiber，就复用并且从 existingChildren 删除这个 fiber。
 
-5. 经历过step4之后，发现老节点existingChildren中还有没被复用的，全部删除即可。
+5. 经历过 step4 之后，发现老节点 existingChildren 中还有没被复用的，全部删除即可。
