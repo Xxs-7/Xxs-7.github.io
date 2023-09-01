@@ -71,7 +71,7 @@ const InlineCode = ({ children }: IInlineCode) => {
   return (
     <code
       className={
-        "inline text-code text-secondary dark:text-secondary-dark px-1.5 py-0.5 rounded-md no-underline bg-[#f2ecde] dark:bg-[#2b333e] text-highlight whitespace-pre-wrap"
+        "inline text-code text-secondary dark:text-secondary-dark px-1.5 py-0.5 mx-0.5 rounded-md no-underline bg-[#f2ecde] dark:bg-[#2b333e] text-highlight whitespace-pre-wrap"
       }
     >
       {children}

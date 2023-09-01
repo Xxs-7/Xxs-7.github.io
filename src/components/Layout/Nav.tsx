@@ -3,6 +3,7 @@ import NextLink from "next/link";
 import React from "react";
 import routes from "@/config/dir.json";
 import classNames from "classnames";
+import path from "path";
 
 export default function Nav() {
   const router = useRouter();
@@ -27,21 +28,24 @@ export default function Nav() {
                 </NextLink>
               </div>
               <ul>
-                {book.routes.map((file) => (
-                  <li
-                    key={file.path}
-                    className={classNames(
-                      "pl-2 border border-transparent rounded-sm font-bold hover:bg-dark/5 text-sm py-0.5 hover:dark:bg-light/5",
-                      {
-                        "text-highlight": asPath.includes(`${file.path}`),
-                      }
-                    )}
-                  >
-                    <NextLink href={`${file.path}`} className="block">
-                      {file.title}
-                    </NextLink>
-                  </li>
-                ))}
+                {book.routes.map((file) => {
+                  const linkPath = path.join(book.path, file.path);
+                  return (
+                    <li
+                      key={linkPath}
+                      className={classNames(
+                        "pl-4 border border-transparent rounded-sm font-bold hover:bg-dark/5 text-sm py-0.5 hover:dark:bg-light/5",
+                        {
+                          "text-highlight": asPath.includes(linkPath),
+                        }
+                      )}
+                    >
+                      <NextLink href={linkPath} className="block">
+                        {file.title}
+                      </NextLink>
+                    </li>
+                  );
+                })}
               </ul>
             </li>
           ))}
