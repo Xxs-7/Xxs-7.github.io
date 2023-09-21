@@ -22,7 +22,7 @@ jobs:
           version: 7
           run_install: true
       - name: 安装依赖 ⚙️
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
       - name: 打包 🏗️
         run: |
           npm run build
