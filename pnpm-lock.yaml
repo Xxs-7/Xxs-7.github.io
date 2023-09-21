@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@chinese-fonts/lxgwwenkai': ^1.1.0
   '@mdx-js/loader': ^2.3.0
   '@mdx-js/react': ^2.3.0
   '@types/lodash': ^4.14.196
@@ -37,6 +38,7 @@ specifiers:
   unist-util-visit: ^5.0.0
 
 dependencies:
+  '@chinese-fonts/lxgwwenkai': 1.1.0
   '@mdx-js/loader': 2.3.0
   '@mdx-js/react': 2.3.0_react@18.2.0
   autoprefixer: 10.4.14_postcss@8.4.24
@@ -86,6 +88,10 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
+
+  /@chinese-fonts/lxgwwenkai/1.1.0:
+    resolution: {integrity: sha512-LxKsCdvRrKBycn/CUW1glUbbnif/NX1CWROXSnZ1CMB9geuxnShuHvyOpLUWL5kiBtKGKNwBD/1nrvp559zB9A==}
+    dev: false
 
   /@esbuild-plugins/node-resolve/0.1.4_esbuild@0.18.11:
     resolution: {integrity: sha512-haFQ0qhxEpqtWWY0kx1Y5oE3sMyO1PcoSiWEPrAw6tm/ZOOLXjSs6Q+v1v9eyuVF0nNt50YEvrcrvENmyoMv5g==}
