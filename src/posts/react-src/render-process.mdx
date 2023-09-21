@@ -26,13 +26,10 @@ commitLayoutEffects
 
 `completeUnitOfWork`
 
-
-
 对于 HostComponent。比较 newProps 和 oldProps，收集发生变更的属性键值对，并存储在 fiber.updateQueue 中
 构建副作用链表。自底向上找出有副作用的 fiber 节点，并构建单向链表
 
 render 阶段的结果是一个副作用链表 `effectList` 以及一棵 fiber 树 `finishedWork`
-
 
 ## Commit 
 

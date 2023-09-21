@@ -11,7 +11,7 @@ declare global {
 export default function Header() {
   return (
     <div className="w-full h-full flex flex-row items-center justify-between px-4">
-      <div>BLOG</div>
+      <div>厘清逻辑</div>
       <div className="mr-2 flex flex-row items-center justify-between gap-2 text-xl">
         <a
           href="https://github.com/Xxs-7/Xxs-7.github.io"

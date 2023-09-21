@@ -1,36 +1,222 @@
-# scheduler
+# Scheduler
 
-scheduler 实际和 react 的组件渲染的代码是独立的，scheduler 它是一种通用设计，只负责任务调度，和处理具体渲染的业务代码无关。
+scheduler 是一种在浏览器调度处理任务的性能优化方案的实现。任务会被存入最小堆中等待调度执行；任务在执行时可以被中止（让渡主线程去处理其他事情），而后继续执行。
 
-在源码中 Scheduler 是 react 单独实现的任务调度库。它也可以实现在浏览器空闲时执行任务，而且还可以设置任务的优先级，高优先级任务先执行，低优先级任务后执行。 Scheduler 存储在 `packages/scheduler` 文件夹中。
+在 react 中 scheduler 被用来调度执行组件渲染的任务，从而实现不阻塞页面的用户响应。该模块的代码完全独立于其他其他模块，如同一个第三方库被 react 调用。
 
-## 工作原理
+### 重点关注
 
-1. **任务的优先级**：React 的 Scheduler 根据任务的优先级来决定任务的执行顺序。React 将任务分为不同的优先级，例如渲染优先级、动画优先级等。每个优先级都有一个相应的调度队列，用于存储待执行的任务。
-2. **任务的调度**：在 React 中，任务可以是更新组件、执行副作用（例如数据获取或动画处理）等。Scheduler 根据任务的优先级和调度策略，决定何时执行任务。React 使用异步的方式执行任务，以避免阻塞主线程，提高应用程序的响应性。
-3. **任务的中断与恢复**：React 的 Scheduler 允许在任务执行过程中中断和恢复任务。这是为了保证高优先级任务的及时响应。当出现具有更高优先级的任务时，React 可以中断当前任务的执行，并执行更高优先级的任务。一旦高优先级任务完成，React 会恢复中断的任务的执行。
-4. **任务的拆分和划分**：为了更好地控制任务的执行和优先级，React 可以将任务拆分为更小的任务单元，并根据任务的重要性和优先级进行划分。这样可以在多个帧中分配任务执行，以保持应用程序的流畅性。
+- react 渲染任务如何传入 scheduler 被存储的？最小堆存放 task
+- 任务在哪个函数被执行，依次执行的顺序？
+- 执行任务让渡主线程的具体代码逻辑是什么？shouldYieldToHost
+- 任务执行的中断和回复
+- 任务优先级参与的代码逻辑
 
-通过 Scheduler 的工作，React 能够实现任务的优先级调度、中断和恢复，以及任务的拆分和划分。这样，React 可以更好地管理任务的执行顺序，并根据任务的重要性和优先级来提供更好的用户体验和响应性能。
+## 任务调度
 
-## 任务
+scheduler 就是做任务调度这件事，在 react 中，`createRoot`，`setState`，`context` 等 API 会产生渲染任务，并且渲染任务会有优先级，可以被中断执行。
 
-## 优先级
+### 最小堆
 
-## 中断和恢复
+手动实现一个简单的最小堆，最小堆是**一种经过排序的完全二叉树，其中任一非终端节点的数据值均不大于其左子节点和右子节点的值**。
 
-## 拆分
+- `peek`：获取堆顶元素，即所有元素的最小值
+- `pop`：弹出堆顶元素，会重新排序构建最小堆结构
+- `push`：插入元素，会重新排序构建最小堆结构
 
-## 通过浏览器空闲时间执行任务
+```js
+export function peek(heap) {
+  return heap.length === 0 ? null : heap[0];
+}
 
-不是利用 JS 主线程而是通过浏览器空闲时间执行任务，可以提高页面的响应性，高效的利用浏览器性能。利用浏览器的任务队列，可以实现这一目标。
+export function push(heap, node) {
+  let index = heap.length;
+  heap.push(node);
+  siftUp(heap, node, index);
+}
 
-react 使用了 messageChannel 的方案，将更新渲染任务作为宏任务，来让渡主线程。
+// 先放在尾部，向上查找
+function siftUp(heap, node, i) {
+  let index = i;
+  while (index > 0) {
+    const parentIndex = (index - 1) >> 1;
+    const parent = heap[parentIndex];
+    if (compare(parent, node) > 0) {
+      heap[parentIndex] = node;
+      heap[index] = parent;
+      index = parentIndex;
+    } else {
+      return;
+    }
+  }
+}
 
-``` JavaScript
+export function pop(heap) {
+  if (heap.length === 0) {
+    return null;
+  }
+
+  const first = heap[0];
+  const last = heap.pop();
+
+  if (first !== last) {
+    heap[0] = last;
+    siftDown(heap, last, 0);
+  }
+  return first;
+}
+
+// 弹出首元素，分别对左右进行比较
+function siftDown(heap, node, i) {
+  let index = i;
+  const len = heap.length;
+  const halfLen = len >> 1;
+  while (index < halfLen) {
+    const leftIndex = (index + 1) * 2 - 1;
+    const rightIndex = leftIndex + 1;
+    const left = heap[leftIndex];
+    const right = heap[rightIndex];
+    if (compare(left, node) < 0) {
+      if (rightIndex < len && compare(right, left) < 0) {
+        heap[index] = right;
+        heap[rightIndex] = node;
+        index = rightIndex;
+      } else {
+        // not right or right < left
+        heap[index] = left;
+        heap[leftIndex] = node;
+        index = leftIndex;
+      }
+    } else if (rightIndex < len && compare(right, node) < 0) {
+      heap[index] = right;
+      heap[rightIndex] = node;
+      index = rightIndex;
+    } else {
+      return;
+    }
+  }
+}
+
+function compare(a, b) {
+  // return a - b;
+  const diff = a.sortIndex - b.sortIndex;
+  return diff !== 0 ? diff : a.id - b.id;
+}
+```
+
+### 任务产生
+
+react 中调用了 `Scheduler.unstable_scheduleCallback` ，通过这个函数将渲染任务存储 `taskQueue` 中，`taskQueue` 是最小堆类型，存放任务等待调度执行。
+
+```js
+// react/packages/scheduler/src/forks/Scheduler.js
+function unstable_scheduleCallback(
+  priorityLevel: PriorityLevel,
+  callback: Callback,
+  options?: {delay: number},
+): Task {
+	// 当前时间戳
+  var currentTime = getCurrentTime();
+
+  var startTime;
+	// react 没用到 option
+  if (typeof options === 'object' && options !== null) {
+    var delay = options.delay;
+    if (typeof delay === 'number' && delay > 0) {
+      startTime = currentTime + delay;
+    } else {
+      startTime = currentTime;
+    }
+  } else {
+		// 设置开始时间
+    startTime = currentTime;
+  }
+
+	// 根据优先级设置超时时间
+  var timeout;
+  switch (priorityLevel) {
+    case ImmediatePriority: // 最高优先级，超时时间最短
+      timeout = IMMEDIATE_PRIORITY_TIMEOUT;
+      break;
+    case UserBlockingPriority:
+      timeout = USER_BLOCKING_PRIORITY_TIMEOUT;
+      break;
+    case IdlePriority:
+      timeout = IDLE_PRIORITY_TIMEOUT;
+      break;
+    case LowPriority:
+      timeout = LOW_PRIORITY_TIMEOUT;
+      break;
+    case NormalPriority:
+    default:
+      timeout = NORMAL_PRIORITY_TIMEOUT;
+      break;
+  }
+	// 根据任务优先级设置过期时间
+  var expirationTime = startTime + timeout;
+
+	// 任务创建，讲本函数参数 callback 被存入任务中
+  var newTask: Task = {
+    id: taskIdCounter++,
+    callback,
+    priorityLevel,
+    startTime,
+    expirationTime,
+    sortIndex: -1,
+  };
+  if (enableProfiling) {
+    newTask.isQueued = false;
+  }
+
+  if (startTime > currentTime) {
+		// 这里是有 option 的情况，react 没有用到
+    // This is a delayed task.
+    newTask.sortIndex = startTime;
+    push(timerQueue, newTask);
+    if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
+      // All tasks are delayed, and this is the task with the earliest delay.
+      if (isHostTimeoutScheduled) {
+        // Cancel an existing timeout.
+        cancelHostTimeout();
+      } else {
+        isHostTimeoutScheduled = true;
+      }
+      // Schedule a timeout.
+      requestHostTimeout(handleTimeout, startTime - currentTime);
+    }
+  } else {
+		// 没有 option 的情况走这里
+		// sortIndex 为 task 被 push 到最小堆时的排序 index，
+		// 不难理解，任务过期时间越小，越靠近堆顶，越优先处理
+    newTask.sortIndex = expirationTime;
+    push(taskQueue, newTask);
+    if (enableProfiling) {
+      markTaskStart(newTask, currentTime);
+      newTask.isQueued = true;
+    }
+    // Schedule a host callback, if needed. If we're already performing work,
+    // wait until the next time we yield.
+		// isHostCallbackScheduled 意思是是否有 host callback 任务被调度了
+    if (!isHostCallbackScheduled && !isPerformingWork) {
+      isHostCallbackScheduled = true;
+      requestHostCallback(flushWork);
+    }
+  }
+
+  return newTask;
+}
+```
+
+### 任务调度执行
+
+scheduler 是将传入的任务放到宏任务的事件循环里执行。
+
+依次有三种兼容性降级的方案：`setImmediate` → `MessageChannel` →`SetTimeout` 
+
+```js
 // react/packages/scheduler/src/forks/Scheduler.js
 let schedulePerformWorkUntilDeadline;
-if (typeof localSetImmediate === 'function') { // 兼容旧版 IE 和 NodeJs，使用 setImmediate
+if (typeof localSetImmediate === 'function') {
   // Node.js and old IE.
   // There's a few reasons for why we prefer setImmediate.
   //
@@ -45,7 +231,7 @@ if (typeof localSetImmediate === 'function') { // 兼容旧版 IE 和 NodeJs，�
   schedulePerformWorkUntilDeadline = () => {
     localSetImmediate(performWorkUntilDeadline);
   };
-} else if (typeof MessageChannel !== 'undefined') { // 如果运行环境支持 MessageChannel
+} else if (typeof MessageChannel !== 'undefined') {
   // DOM and Worker environments.
   // We prefer MessageChannel because of the 4ms setTimeout clamping.
   const channel = new MessageChannel();
@@ -54,7 +240,7 @@ if (typeof localSetImmediate === 'function') { // 兼容旧版 IE 和 NodeJs，�
   schedulePerformWorkUntilDeadline = () => {
     port.postMessage(null);
   };
-} else { // 最坏打算，使用 setTimeout
+} else {
   // We should only fallback here in non-browser environments.
   schedulePerformWorkUntilDeadline = () => {
     // $FlowFixMe[not-a-function] nullable value
@@ -63,10 +249,320 @@ if (typeof localSetImmediate === 'function') { // 兼容旧版 IE 和 NodeJs，�
 }
 ```
 
-### 关于任务队列
-浏览器提供的关于任务队列的 API：
+实际执行的就是：
 
-- `setTimeout`：至少会有 4ms 的延迟，并且嵌套使用延迟时间会被叠加
-- `requestAnimationFrame`：由于浏览器内核机制，有时存在 [丢帧](https://medium.com/@paul_irish/requestanimationframe-scheduling-for-nerds-9c57f7438ef4) 的情况
-- `requestIdleCallback`：兼容性差，并且其实际的 FPS 只有 20ms，正常情况下渲染一帧时长控制在 16.67ms (1s / 60 = 16.67ms)。该时间是高于页面流畅的诉求，[参考](https://juejin.cn/post/7061947637167194142#heading-3)。
-- `MessageChannel`：浏览器提供，用于创建一个 `MessagePort` 对象，它允许两个运行在上下文中的脚本进行通信。
+``` js
+let schedulePerformWorkUntilDeadline;
+schedulePerformWorkUntilDeadline = () => {
+   localSetImmediate(performWorkUntilDeadline);
+};
+```
+
+再回到从 `scheduleUpdateOnFiber` 到 task 被执行：
+
+``` js
+// 简要代码执行流程
+function unstable_scheduleCallback () {
+	requestHostCallback(flushWork);
+}
+function requestHostCallback(callback) {
+  scheduledHostCallback = callback;
+  if (!isMessageLoopRunning) {
+    isMessageLoopRunning = true;
+		// 执行上一段代码的  localSetImmediate(performWorkUntilDeadline);
+    schedulePerformWorkUntilDeadline();
+  }
+}
+// 里面的 scheduledHostCallback 为 flushWork
+const performWorkUntilDeadline = () => {
+  if (scheduledHostCallback !== null) {
+    const currentTime = getCurrentTime();
+    // Keep track of the start time so we can measure how long the main thread
+    // has been blocked.
+    startTime = currentTime;
+
+    // If a scheduler task throws, exit the current browser task so the
+    // error can be observed.
+    //
+    // Intentionally not using a try-catch, since that makes some debugging
+    // techniques harder. Instead, if `scheduledHostCallback` errors, then
+    // `hasMoreWork` will remain true, and we'll continue the work loop.
+    let hasMoreWork = true;
+    try {
+      // $FlowFixMe[not-a-function] found when upgrading Flow
+      hasMoreWork = scheduledHostCallback(currentTime);
+    } finally {
+      if (hasMoreWork) {
+        // If there's more work, schedule the next message event at the end
+        // of the preceding one.
+        schedulePerformWorkUntilDeadline();
+      } else {
+        isMessageLoopRunning = false;
+        scheduledHostCallback = null;
+      }
+    }
+  } else {
+    isMessageLoopRunning = false;
+  }
+  // Yielding to the browser will give it a chance to paint, so we can
+  // reset this.
+  needsPaint = false;
+};
+
+function flushWork(initialTime: number) {
+  if (enableProfiling) {
+	  ···
+  }
+
+  // We'll need a host callback the next time work is scheduled.
+  isHostCallbackScheduled = false;
+  if (isHostTimeoutScheduled) {
+    // We scheduled a timeout but it's no longer needed. Cancel it.
+    isHostTimeoutScheduled = false;
+    cancelHostTimeout();
+  }
+
+  isPerformingWork = true;
+  const previousPriorityLevel = currentPriorityLevel;
+  try {
+    if (enableProfiling) {
+	    ···
+    } else {
+      // No catch in prod code path.
+      return workLoop(initialTime);
+    }
+  } finally {
+    currentTask = null;
+    currentPriorityLevel = previousPriorityLevel;
+    isPerformingWork = false;
+    if (enableProfiling) {
+     ···
+    }
+  }
+}
+
+function workLoop(initialTime: number) {function workLoop(initialTime: number) {
+  let currentTime = initialTime;
+  advanceTimers(currentTime);
+	// 取 task
+  currentTask = peek(taskQueue);
+  while (
+    currentTask !== null &&
+    !(enableSchedulerDebugging && isSchedulerPaused)
+  ) {
+    if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
+      // This currentTask hasn't expired, and we've reached the deadline.
+      break;
+    }
+    // $FlowFixMe[incompatible-use] found when upgrading Flow
+    const callback = currentTask.callback;
+    if (typeof callback === 'function') {
+      // $FlowFixMe[incompatible-use] found when upgrading Flow
+      currentTask.callback = null;
+      // $FlowFixMe[incompatible-use] found when upgrading Flow
+      currentPriorityLevel = currentTask.priorityLevel;
+      // $FlowFixMe[incompatible-use] found when upgrading Flow
+      const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
+      if (enableProfiling) {
+        // $FlowFixMe[incompatible-call] found when upgrading Flow
+        markTaskRun(currentTask, currentTime);
+      }
+      const continuationCallback = callback(didUserCallbackTimeout);
+      currentTime = getCurrentTime();
+      if (typeof continuationCallback === 'function') {
+        // If a continuation is returned, immediately yield to the main thread
+        // regardless of how much time is left in the current time slice.
+        // $FlowFixMe[incompatible-use] found when upgrading Flow
+        currentTask.callback = continuationCallback;
+        if (enableProfiling) {
+          ···
+        }
+        advanceTimers(currentTime);
+        return true;
+      } else {
+        if (enableProfiling) {
+          ···
+        }
+        if (currentTask === peek(taskQueue)) {
+          pop(taskQueue);
+        }
+        advanceTimers(currentTime);
+      }
+    } else {
+      pop(taskQueue);
+    }
+    currentTask = peek(taskQueue);
+  }
+  // Return whether there's additional work
+  if (currentTask !== null) {
+    return true;
+  } else {
+    const firstTimer = peek(timerQueue);
+    if (firstTimer !== null) {
+      requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
+    }
+    return false;
+  }
+}
+```
+
+可以看出，核心执行流程是通过 `while` 循环不断取 `taskQueue` 中的 `task`，并执行其 `task.callback` 
+
+``` js
+// 简化版流程
+function workLoop(initialTime: number) {
+	···  
+	// 获取堆顶任务
+	currentTask = peek(taskQueue);
+  while (
+    currentTask !== null &&
+    !(enableSchedulerDebugging && isSchedulerPaused)
+  ) {
+		// 前一个比较是一个贪心的策略，未到 deadline，可以再等等
+		// 如果是优先级较高的，那其实会很快过期
+		// shouldYieldToHost 是中断的逻辑
+		if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
+      // This currentTask hasn't expired, and we've reached the deadline.
+      break;
+    }
+		// 执行 callback
+		const callback = currentTask.callback;
+    if (typeof callback === 'function') {
+			const continuationCallback = callback(didUserCallbackTimeout);
+      if (typeof continuationCallback === 'function') {
+				currentTask.callback = continuationCallback;
+				return true;
+			} else {
+				if (currentTask === peek(taskQueue)) {
+          pop(taskQueue);
+        }
+			}
+		} else {
+			// 移除被执行的任务
+      pop(taskQueue);
+    }
+		// 获取下一个堆顶任务
+		currentTask = peek(taskQueue);
+	}
+}
+```
+
+函数中调用 `shouldYieldToHost` 判断是否让渡处理权给页面，实际效果就是提前结束掉当前这个宏任务，当前任务的后续内容被中断，不执行了。里面逻辑比较复杂，时间判断逻辑较多，后续再研究。但是重点是调用了 `navigator.scheduling.isInputPending` ，这个 API 的兼容性不太行，是 react 和 chrome 合作搞出来的。如果浏览器任务队列中有输入事件待处理，则返回 `true`。
+
+``` js
+// 有兴趣看看就行
+const isInputPending =
+  typeof navigator !== 'undefined' &&
+  // $FlowFixMe[prop-missing]
+  navigator.scheduling !== undefined &&
+  // $FlowFixMe[incompatible-type]
+  navigator.scheduling.isInputPending !== undefined
+    ? navigator.scheduling.isInputPending.bind(navigator.scheduling)
+    : null;
+
+function shouldYieldToHost(): boolean {
+  const timeElapsed = getCurrentTime() - startTime;
+  if (timeElapsed < frameInterval) {
+    // The main thread has only been blocked for a really short amount of time;
+    // smaller than a single frame. Don't yield yet.
+    return false;
+  }
+
+  if (enableIsInputPending) {
+    if (needsPaint) {
+      // There's a pending paint (signaled by `requestPaint`). Yield now.
+      return true;
+    }
+    if (timeElapsed < continuousInputInterval) {
+      // We haven't blocked the thread for that long. Only yield if there's a
+      // pending discrete input (e.g. click). It's OK if there's pending
+      // continuous input (e.g. mouseover).
+      if (isInputPending !== null) {
+        return isInputPending();
+      }
+    } else if (timeElapsed < maxInterval) {
+      // Yield if there's either a pending discrete or continuous input.
+      if (isInputPending !== null) {
+        return isInputPending(x);
+      }
+    } else {
+      // We've blocked the thread for a long time. Even if there's no pending
+      // input, there may be some other scheduled work that we don't know about,
+      // like a network event. Yield now.
+      return true;
+    }
+  }
+
+  // `isInputPending` isn't available. Yield now.
+  return true;
+}
+```
+
+## 任务调度为什么选择宏任务
+
+当 `shouldYieldToHost()` 返回 `true` 后，Scheduler 需要满足以下功能点：
+
+1. 暂停渲染任务的执行，将主线程还给浏览器，让浏览器有机会更新页面去处理用户响应等任务
+2. 在未来某个时刻继续调度任务，执行上次还没有完成的任务（这部分逻辑不在 scheduler，至于如何保留当前现场，之后恢复现场并继续执行，是任务里的 callback 应该做的事，实际上，渲染任务的 callback 里也会用到 `shouldYieldToHost` ）
+
+要满足这两点就需要调度一个宏任务，因为宏任务是在下次事件循环中执行，不会阻塞本次页面更新。
+
+ <img src="/lifeOfAFrame.png" width={800} height={300}/>
+
+为什么不用微任务，`requestAnimationFrame` 或 `requestIdleCallback`?
+
+微任务是在本次事件循环里执行，如果产生的渲染任务是以微任务方式执行，那么必须产生的微任务都执行完毕才进入下一个宏任务。
+raf 是在帧间执行一次，而宏任务在帧间不一定只执行一个，可以执行多个最后再一起渲染。具体可以看这个分析 [React 之 requestAnimationFrame 执行机制探索](https://juejin.cn/post/7165780929439334437)
+`requestIdleCallback` 则是兼容性较差。
+
+### 让渡主线程
+
+`shouldYieldToHost` 
+
+`navigator.scheduling.isInputPending API`是react 与Chrome团队合作的产物。
+``` js
+function shouldYieldToHost(): boolean {
+  const timeElapsed = getCurrentTime() - startTime;
+  if (timeElapsed < frameInterval) {
+    // The main thread has only been blocked for a really short amount of time;
+    // smaller than a single frame. Don't yield yet.
+    return false;
+  }
+
+  // The main thread has been blocked for a non-negligible amount of time. We
+  // may want to yield control of the main thread, so the browser can perform
+  // high priority tasks. The main ones are painting and user input. If there's
+  // a pending paint or a pending input, then we should yield. But if there's
+  // neither, then we can yield less often while remaining responsive. We'll
+  // eventually yield regardless, since there could be a pending paint that
+  // wasn't accompanied by a call to `requestPaint`, or other main thread tasks
+  // like network events.
+  if (enableIsInputPending) {
+    if (needsPaint) {
+      // There's a pending paint (signaled by `requestPaint`). Yield now.
+      return true;
+    }
+    if (timeElapsed < continuousInputInterval) {
+      // We haven't blocked the thread for that long. Only yield if there's a
+      // pending discrete input (e.g. click). It's OK if there's pending
+      // continuous input (e.g. mouseover).
+      if (isInputPending !== null) {
+        return isInputPending();
+      }
+    } else if (timeElapsed < maxInterval) {
+      // Yield if there's either a pending discrete or continuous input.
+      if (isInputPending !== null) {
+        return isInputPending(continuousOptions);
+      }
+    } else {
+      // We've blocked the thread for a long time. Even if there's no pending
+      // input, there may be some other scheduled work that we don't know about,
+      // like a network event. Yield now.
+      return true;
+    }
+  }
+
+  // `isInputPending` isn't available. Yield now.
+  return true;
+}
+```
