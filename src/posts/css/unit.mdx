@@ -9,25 +9,25 @@ date: '2022-01-01'
 
 ## px
 
-px是最常用的单位：
+px 是最常用的单位：
 
-px，即pixel，像素的意思。
+px，即 pixel，像素的意思。
 
 ## 像素
 
 有两种，一种是物理像素，一种逻辑像素。 以前一个逻辑像素是等于一个物理像素的。当一个逻辑像素对应多个物理像素的时候，这时候，显示会更清楚。一个逻辑像素对应多少个物理像素，这个叫做 **Device pixel ratio(像素设备比，dpr)**
 
-在开发过程中，css通常使用逻辑像素，也称为设备独立像素。
+在开发过程中，css 通常使用逻辑像素，也称为设备独立像素。
 
 物理像素单位：
 
 dpi(dot per inch)：点/每英寸 
 ppi(pixel per inch)：像素/每英寸 
-dppx:dot per pixel，也称dpr，屏幕的一个像素（**CSS 像素**），需要几个点（**物理像素**）来显示
+dppx:dot per pixel，也称 dpr，屏幕的一个像素（**CSS 像素**），需要几个点（**物理像素**）来显示
 
-例如在iPhone4设备屏幕中的物理像素数为640 * 960px，而CSS逻辑像素数为320 * 480像素。因此，使用大约4个物理像素来显示一个CSS像素。(4dppx或者说是4dpr)
+例如在 iPhone4 设备屏幕中的物理像素数为 640 * 960px，而 CSS 逻辑像素数为 320 * 480 像素。因此，使用大约 4个物理像素来显示一个 CSS 像素。(4dppx 或者说是 4dpr)
 
-dpr可以通过 `window.devicePixelRatio` 获取。
+dpr 可以通过 `window.devicePixelRatio` 获取。
 
 ## viewport
 
@@ -37,18 +37,18 @@ dpr可以通过 `window.devicePixelRatio` 获取。
 <meta name="viewport" content="width=device-width, initial-scale=1">
 ```
 
-这行代码涉及3个内容：`viewport`，`width=device-width`，`initial-scale`
+这行代码涉及 3个内容：`viewport`，`width=device-width`，`initial-scale`
 
 上述该 meta 标签的作用是让当前 viewport 的宽度等于设备的宽度，同时不允许用户手动缩放。 
-* `width=device-width`，顾名思义就是把默认的layout viewport的宽度设为移动设备的屏幕宽度。
-* `initial-scale=1`，设置页面的初始缩放值为1，缩放是相对于 ideal viewport来进行缩放的，当对ideal 
-* `viewport`，进行100%的缩放，也就是缩放值为1的时候，就得到了ideal viewport。
+* `width=device-width`，顾名思义就是把默认的 layout viewport 的宽度设为移动设备的屏幕宽度。
+* `initial-scale=1`，设置页面的初始缩放值为 1，缩放是相对于 ideal viewport 来进行缩放的，当对 ideal 
+* `viewport`，进行 100%的缩放，也就是缩放值为 1的时候，就得到了 ideal viewport。
 
 **viewport** 通常是指用户网页的可视区域，简称“视区”,
 
-**viewport** 分为 **layout viewport、visual viewport** 和 **ideal viewport** 三个概念（请见：[ppk关于layout的三个理论](https://www.runoob.com/w3cnote/viewport-deep-understanding.html)）。
+**viewport** 分为 **layout viewport、visual viewport** 和 **ideal viewport** 三个概念（请见：[ppk 关于 layout 的三个理论](https://www.runoob.com/w3cnote/viewport-deep-understanding.html)）。
 
-**layout viewport**：浏览器默认的 viewport，宽度可以通过 `document.documentElement.clientWidth` 来获取。其宽度不一定与屏幕物理宽度一致，因此会出现以下这种情况，原本在PC浏览器上正常显示的页面在手机浏览器查看时浏览器底部出现滚动条。
+**layout viewport**：浏览器默认的 viewport，宽度可以通过 `document.documentElement.clientWidth` 来获取。其宽度不一定与屏幕物理宽度一致，因此会出现以下这种情况，原本在 PC 浏览器上正常显示的页面在手机浏览器查看时浏览器底部出现滚动条。
 
 **visual viewport**：用户直接看到的浏览器的窗口，通过 *visual viewport* 所看到的内容就是 *layout viewport*上的部分内容。
 
@@ -60,11 +60,11 @@ ideal viewport：能完美适配移动设备的 viewport
 
 em：文本相对长度单位。相对于当前对象内文本的字体尺寸。如果当前行内文本的字体尺寸未被人为设置，则相对于浏览器的默认字体尺寸(默认 16px)。（注意 font-size 可以继承自父元素）
 
-rem：是 CSS3 新增的一个相对单位，相对于根元素（ html 元素）的 font-size 的倍数。利用 rem 可以实现简单的响应式布局，可以利用html元素中字体的大小与屏幕间的比值来设置 font-size 的值，以此实现当屏幕分辨率变化时让元素也随之变化。
+rem：是 CSS3 新增的一个相对单位，相对于根元素（ html 元素）的 font-size 的倍数。利用 rem 可以实现简单的响应式布局，可以利用 html 元素中字体的大小与屏幕间的比值来设置 font-size 的值，以此实现当屏幕分辨率变化时让元素也随之变化。
 
 ## vh，vw
 
-**vw/vh**是与视图窗口有关的单位，vw 表示相对于视图窗口的宽度，vh 表示相对于视图窗口高度，除了 vw 和 vh 外，还有 vmin 和 vmax 两个相关的单位。 视图窗口：PC 端指的是浏览器的可视区域；移动端指的就是Viewport中的Layout Viewport。
+**vw/vh**是与视图窗口有关的单位，vw 表示相对于视图窗口的宽度，vh 表示相对于视图窗口高度，除了 vw 和 vh 外，还有 vmin 和 vmax 两个相关的单位。 视图窗口：PC 端指的是浏览器的可视区域；移动端指的就是 Viewport 中的 Layout Viewport。
 
 - vw：相对于视窗的宽度，视窗宽度是 100vw；
 - vh：相对于视窗的高度，视窗高度是 100vh；

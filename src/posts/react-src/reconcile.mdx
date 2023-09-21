@@ -1,0 +1,207 @@
+# reconcile 原理
+
+判断子节点类型：
+
+- 单个节点
+- 数组
+- 字符串或数字
+
+```jsx
+// react/packages/react-reconciler/src/ReactFiberBeginWork.old.js
+export function reconcileChildren(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  nextChildren: any,
+  renderLanes: Lanes,
+) {
+  if (current === null) {
+		// 首次渲染
+    // If this is a fresh new component that hasn't been rendered yet, we
+    // won't update its child set by applying minimal side-effects. Instead,
+    // we will add them all to the child before it gets rendered. That means
+    // we can optimize this reconciliation pass by not tracking side-effects.
+    workInProgress.child = mountChildFibers(
+      workInProgress,
+      null,
+      nextChildren,
+      renderLanes,
+    );
+  } else {
+		// 更新渲染
+    // If the current child is the same as the work in progress, it means that
+    // we haven't yet started any work on these children. Therefore, we use
+    // the clone algorithm to create a copy of all the current children.
+
+    // If we had any progressed work already, that is invalid at this point so
+    // let's throw it out.
+    workInProgress.child = reconcileChildFibers(
+      workInProgress,
+      current.child,
+      nextChildren,
+      renderLanes,
+    );
+  }
+}
+```
+
+`mountChildFibers` 和 `reconcileChildFibers`  深挖还是同一个函数 `reconcileChildFibers`
+
+```jsx
+export const reconcileChildFibers: ChildReconciler = createChildReconciler(
+  true,
+);
+export const mountChildFibers: ChildReconciler = createChildReconciler(false);
+
+function createChildReconciler(shouldTrackSideEffects): ChildReconciler {
+	// 特别多的小函数
+	···
+
+  // This API will tag the children with the side-effect of the reconciliation
+  // itself. They will be added to the side-effect list as we pass through the
+  // children and the parent.
+  function reconcileChildFibers(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    newChild: any,
+    lanes: Lanes,
+  ): Fiber | null {
+    // This function is not recursive.
+    // If the top level item is an array, we treat it as a set of children,
+    // not as a fragment. Nested arrays on the other hand will be treated as
+    // fragment nodes. Recursion happens at the normal flow.
+
+    // Handle top level unkeyed fragments as if they were arrays.
+    // This leads to an ambiguity between <>{[...]}</> and <>...</>.
+    // We treat the ambiguous cases above the same.
+    const isUnkeyedTopLevelFragment =
+      typeof newChild === 'object' &&
+      newChild !== null &&
+      newChild.type === REACT_FRAGMENT_TYPE &&
+      newChild.key === null;
+    if (isUnkeyedTopLevelFragment) {
+      newChild = newChild.props.children;
+    }
+
+    // Handle object types
+    if (typeof newChild === 'object' && newChild !== null) {
+			// 处理单个子节点的情况
+      switch (newChild.$$typeof) {
+        case REACT_ELEMENT_TYPE:
+          return placeSingleChild(
+            reconcileSingleElement(
+              returnFiber,
+              currentFirstChild,
+              newChild,
+              lanes,
+            ),
+          );
+        case REACT_PORTAL_TYPE:
+          ···
+        case REACT_LAZY_TYPE:
+          ···
+      }
+
+			// 多个子节点
+      if (isArray(newChild)) {
+        return reconcileChildrenArray(
+          returnFiber,
+          currentFirstChild,
+          newChild,
+          lanes,
+        );
+      }
+
+			// 处理子组件为迭代器的情况，实际上逻辑和数组差不多
+      if (getIteratorFn(newChild)) {
+        return reconcileChildrenIterator(
+          returnFiber,
+          currentFirstChild,
+          newChild,
+          lanes,
+        );
+      }
+
+      throwOnInvalidObjectType(returnFiber, newChild);
+    }
+
+		// 处理子组件是文本的情况
+    if (
+      (typeof newChild === 'string' && newChild !== '') ||
+      typeof newChild === 'number'
+    ) {
+      return placeSingleChild(
+        reconcileSingleTextNode(
+          returnFiber,
+          currentFirstChild,
+          '' + newChild,
+          lanes,
+        ),
+      );
+    }
+
+    if (__DEV__) {
+      ···
+    }
+
+    // Remaining cases are all treated as empty.
+    return deleteRemainingChildren(returnFiber, currentFirstChild);
+  }
+
+  return reconcileChildFibers;
+}
+
+```
+
+`shouldTrackSideEffects` ：用于表示处理当前组件时是否应该跟踪副作用。副作用是指那些在组件渲染过程中可能引起的额外操作，例如访问网络、修改状态等。这里更新渲染相较于初次渲染就是多了副作用的处理逻辑。
+
+处理新老相同节点的 diff，代码较多，且都比较重要，建议看源码。
+
+此时更新后的组件的 fiber 还未创建，只有实例（类组件实例化，函数组件执行）*`element`* 。
+
+```jsx
+// react/packages/react-reconciler/src/ReactChildFiber.old.js
+function reconcileSingleElement(
+    returnFiber: Fiber, // 父组件的 fiber
+    currentFirstChild: Fiber | null, // 子组件第一个 fiber
+    element: ReactElement,
+    lanes: Lanes,
+  ): Fiber {
+	const key = element.key;
+  let child = currentFirstChild;// 子组件的 fiber 在父组件中是链表存储
+  while (child !== null) {
+			// TODO: If key === null and child.key === null, then this only applies to
+      // the first item in the list.
+      if (child.key === key) { // 查找 element 对应的旧 fiber，
+        const elementType = element.type;
+        if (elementType === REACT_FRAGMENT_TYPE){
+					···
+				} else {
+					···
+				}
+			} else {
+				// 进入到该函数中，element 只为单组件，其他的旧 fiber 都可以删除了
+        deleteChild(returnFiber, child);
+      }
+      child = child.sibling;
+  }
+
+		// 复用不了旧组件的 fiber，那只能新建 fiber 了。
+    if (element.type === REACT_FRAGMENT_TYPE) {
+      const created = createFiberFromFragment(
+        element.props.children,
+        returnFiber.mode,
+        lanes,
+        element.key,
+      );
+      created.return = returnFiber;
+      return created;
+    } else {
+      const created = createFiberFromElement(element, returnFiber.mode, lanes);
+      created.ref = coerceRef(returnFiber, currentFirstChild, element);
+      created.return = returnFiber;
+      return created;
+    }
+}
+```
+
+处理子元素为数组的情况，那这个函数的用途和`reconcileSingleElement` 的目标差不多，就是通过 diff 算法构建出 `newChildren` 对应新 fiber （也会判断是否复用就 fiber）

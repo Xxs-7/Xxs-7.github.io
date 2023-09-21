@@ -1,0 +1,491 @@
+# 渲染任务的执行
+
+初次渲染和更新渲染的处理走到最后都是进入了`scheduleUpdateOnFiber`
+
+## 源码分析
+
+`scheduleUpdateOnFiber` 重点在于执行了 `ensureRootIsScheduled(root, eventTime);`
+```jsx
+// react/packages/react-reconciler/src/ReactFiberWorkLoop.old.js
+export function scheduleUpdateOnFiber(
+  root: FiberRoot,
+  fiber: Fiber,
+  lane: Lane,
+  eventTime: number,
+) {
+	···
+
+  // Mark that the root has a pending update.
+	// 标记当前的 fiber 有 update 任务
+  markRootUpdated(root, lane, eventTime);
+
+  if (
+    (executionContext & RenderContext) !== NoLanes &&
+    root === workInProgressRoot
+  ) {
+    // This update was dispatched during the render phase. This is a mistake
+    // if the update originates from user space (with the exception of local
+    // hook updates, which are handled differently and don't reach this
+    // function), but there are some internal React features that use this as
+    // an implementation detail, like selective hydration.
+    warnAboutRenderPhaseUpdatesInDEV(fiber);
+
+    // Track lanes that were updated during the render phase
+    workInProgressRootRenderPhaseUpdatedLanes = mergeLanes(
+      workInProgressRootRenderPhaseUpdatedLanes,
+      lane,
+    );
+  } else {
+    // This is a normal update, scheduled from outside the render phase. For
+    // example, during an input event.
+    ···
+  
+    if (root === workInProgressRoot) {
+      // Received an update to a tree that's in the middle of rendering. Mark
+      // that there was an interleaved update work on this root. Unless the
+      // `deferRenderPhaseUpdateToNextBatch` flag is off and this is a render
+      // phase update. In that case, we don't treat render phase updates as if
+      // they were interleaved, for backwards compat reasons.
+      if (
+        deferRenderPhaseUpdateToNextBatch ||
+        (executionContext & RenderContext) === NoContext
+      ) {
+        workInProgressRootInterleavedUpdatedLanes = mergeLanes(
+          workInProgressRootInterleavedUpdatedLanes,
+          lane,
+        );
+      }
+      if (workInProgressRootExitStatus === RootSuspendedWithDelay) {
+        // The root already suspended with a delay, which means this render
+        // definitely won't finish. Since we have a new update, let's mark it as
+        // suspended now, right before marking the incoming update. This has the
+        // effect of interrupting the current render and switching to the update.
+        // TODO: Make sure this doesn't override pings that happen while we've
+        // already started rendering.
+        markRootSuspended(root, workInProgressRootRenderLanes);
+      }
+    }
+
+		// 重点在于这行
+    ensureRootIsScheduled(root, eventTime);
+    if (
+      lane === SyncLane &&
+      executionContext === NoContext &&
+      (fiber.mode & ConcurrentMode) === NoMode &&
+      // Treat `act` as if it's inside `batchedUpdates`, even in legacy mode.
+      !(__DEV__ && ReactCurrentActQueue.isBatchingLegacy)
+    ) {
+      // Flush the synchronous work now, unless we're already working or inside
+      // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
+      // scheduleCallbackForFiber to preserve the ability to schedule a callback
+      // without immediately flushing it. We only do this for user-initiated
+      // updates, to preserve historical behavior of legacy mode.
+      resetRenderTimer();
+      flushSyncCallbacksOnlyInLegacyMode();
+    }
+  }
+}
+```
+
+```jsx
+export function markRootUpdated(
+  root: FiberRoot,
+  updateLane: Lane,
+  eventTime: number,
+) {
+  root.pendingLanes |= updateLane;
+
+  // If there are any suspended transitions, it's possible this new update
+  // could unblock them. Clear the suspended lanes so that we can try rendering
+  // them again.
+  //
+  // TODO: We really only need to unsuspend only lanes that are in the
+  // `subtreeLanes` of the updated fiber, or the update lanes of the return
+  // path. This would exclude suspended updates in an unrelated sibling tree,
+  // since there's no way for this update to unblock it.
+  //
+  // We don't do this if the incoming update is idle, because we never process
+  // idle updates until after all the regular updates have finished; there's no
+  // way it could unblock a transition.
+  if (updateLane !== IdleLane) {
+    root.suspendedLanes = NoLanes;
+    root.pingedLanes = NoLanes;
+  }
+
+  const eventTimes = root.eventTimes;
+  const index = laneToIndex(updateLane);
+  // We can always overwrite an existing timestamp because we prefer the most
+  // recent event, and we assume time is monotonically increasing.
+  eventTimes[index] = eventTime;
+}
+```
+
+`markRootUpdated` 可以看到，实际是在 fiber 修改了 `root.pendingLanes |= updateLane;`
+
+并且由对 `lane` 的处理可知，`fiber.eventTime[laneToIndex(updateLane)] = eventTime`
+
+这里初步接触的 lane 模型的概念，利用 `eventTime` 数组模拟了一个多车道的模型。
+
+```tsx
+const eventTimes = root.eventTimes;
+const index = laneToIndex(updateLane);
+// We can always overwrite an existing timestamp because we prefer the most
+// recent event, and we assume time is monotonically increasing.
+eventTimes[index] = eventTime;
+```
+
+`ensureRootIsScheduled`
+
+```jsx
+// Use this function to schedule a task for a root. There's only one task per
+// root; if a task was already scheduled, we'll check to make sure the priority
+// of the existing task is the same as the priority of the next level that the
+// root has work on. This function is called on every update, and right before
+// exiting a task.
+function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
+	// 杂七杂八代码比较多，这里简化核心代码
+	···
+
+	// Determine the next lanes to work on, and their priority.
+  const nextLanes = getNextLanes(
+    root,
+    root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
+  );
+
+	···
+
+	// We use the highest priority lane to represent the priority of the callback.
+  const newCallbackPriority = getHighestPriorityLane(nextLanes);
+
+	···
+	// Schedule a new callback.
+  let newCallbackNode;
+  if (newCallbackPriority === SyncLane) {
+		···
+	} else {
+    let schedulerPriorityLevel;
+    switch (lanesToEventPriority(nextLanes)) {
+      case DiscreteEventPriority:
+        schedulerPriorityLevel = ImmediateSchedulerPriority;
+        break;
+      case ContinuousEventPriority:
+        schedulerPriorityLevel = UserBlockingSchedulerPriority;
+        break;
+      case DefaultEventPriority:
+        schedulerPriorityLevel = NormalSchedulerPriority;
+        break;
+      case IdleEventPriority:
+        schedulerPriorityLevel = IdleSchedulerPriority;
+        break;
+      default:
+        schedulerPriorityLevel = NormalSchedulerPriority;
+        break;
+    }
+		// 核心逻辑是走到这里
+		// 调用 scheduleCallback，将渲染任务（具体为performConcurrentWorkOnRoot）作为 callback
+		// 传入 scheduler 的 API ---- scheduleCallback，里面会创建 task，放入 taskQueue 等待调度执行
+		// 也就是所谓的渲染会在空闲时候执行
+    newCallbackNode = scheduleCallback(
+      schedulerPriorityLevel, // 任务调度的优先级
+      performConcurrentWorkOnRoot.bind(null, root), // 要执行的任务
+    );
+  }
+
+  root.callbackPriority = newCallbackPriority;
+  root.callbackNode = newCallbackNode;
+}
+```
+
+至此，发起渲染任务的代码（`root.render` 或 `setState`）执行结束，产生了 `performConcurrentWorkOnRoot.bind(null, root),` 这样一个闭包函数，交给了 scheduler。
+
+## 核心逻辑
+
+`performConcurrentWorkOnRoot`
+
+```jsx
+// This is the entry point for every concurrent task, i.e. anything that
+// goes through Scheduler.
+function performConcurrentWorkOnRoot(root, didTimeout) {
+  ···
+
+	// We disable time-slicing in some cases: if the work has been CPU-bound
+  // for too long ("expired" work, to prevent starvation), or we're in
+  // sync-updates-by-default mode.
+  // TODO: We only check `didTimeout` defensively, to account for a Scheduler
+  // bug we're still investigating. Once the bug in Scheduler is fixed,
+  // we can remove this, since we track expiration ourselves.
+  const shouldTimeSlice =
+    !includesBlockingLane(root, lanes) &&
+    !includesExpiredLane(root, lanes) &&
+    (disableSchedulerTimeoutInWorkLoop || !didTimeout);
+	// 只看核心代码行
+  let exitStatus = shouldTimeSlice
+    ? renderRootConcurrent(root, lanes) // 包含 18 的新特性
+		: renderRootSync(root, lanes); // 没有 concurrent 的处理逻辑，简化版本
+	if (exitStatus !== RootInProgress) {
+		···
+	}
+
+	···
+
+	return null;
+}
+```
+
+在初次渲染中，由于 `lane` 是默认的 `DefaultLane`，`includesBlockingLane` 的结果为 `true`，`shouldTimeSlice` 值为 `false`，走的是 `renderRootSync`。
+
+```jsx
+function renderRootSync(root: FiberRoot, lanes: Lanes) {
+  const prevExecutionContext = executionContext;
+  executionContext |= RenderContext; // 进入 render 阶段
+  const prevDispatcher = pushDispatcher(root.containerInfo);
+  const prevCacheDispatcher = pushCacheDispatcher();
+
+	// If the root or lanes have changed, throw out the existing stack
+  // and prepare a fresh one. Otherwise we'll continue where we left off.
+  if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
+		···
+		// 这个函数调用了 createWorkInProgress，以 rootfiber 为模板复制一份 fiber
+		// 并赋值给 workInProgress
+		prepareFreshStack(root, lanes);
+  }
+  ···
+
+	// 核心在这里，执行 workLoopSync
+  do {
+    try {
+      workLoopSync();
+      break;
+    } catch (thrownValue) {
+      handleThrow(root, thrownValue);
+    }
+		// todo：暂未明白为什么要 while 循环，
+		// 从代码来看是 workLoopSync 如果出错，仍然可以重复执行进行纠错，一旦执行完毕即 break
+		// 所以 renderRootSync 是阻塞的
+		// 而 renderRootConcurrent 函数会通过判断 workInProgressSuspendedThenableState 阻止阻塞
+  } while (true); 
+  resetContextDependencies();
+
+	···
+	return workInProgressRootExitStatus;
+}
+```
+
+```jsx
+// The work loop is an extremely hot path. Tell Closure not to inline it.
+/** @noinline */
+function workLoopSync() {
+  // Perform work without checking if we need to yield between fiber.
+
+  if (workInProgressIsSuspended) {
+    // The current work-in-progress was already attempted. We need to unwind
+    // it before we continue the normal work loop.
+		// react 源码其实还是会滥用全局变量的...
+    const thrownValue = workInProgressThrownValue;
+    workInProgressIsSuspended = false;
+    workInProgressThrownValue = null;
+    if (workInProgress !== null) {
+			// 如果发现之前处理的任务被中断了，那么则会恢复现场，继续执行
+      resumeSuspendedUnitOfWork(workInProgress, thrownValue);
+    }
+  }
+
+  while (workInProgress !== null) {
+		// 进入到 workLoopSync，核心逻辑就是遍历 fiber 树
+    performUnitOfWork(workInProgress);
+  }
+}
+```
+
+```jsx
+// react/packages/react-reconciler/src/ReactFiberWorkLoop.old.js
+
+function performUnitOfWork(unitOfWork: Fiber): void {
+  // The current, flushed, state of this fiber is the alternate. Ideally
+  // nothing should rely on this, but relying on it here means that we don't
+  // need an additional field on the work in progress.
+  const current = unitOfWork.alternate;
+  setCurrentDebugFiberInDEV(unitOfWork);
+
+  let next;
+  console.log('workInProgress',workInProgress)
+  if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
+    startProfilerTimer(unitOfWork);
+    next = beginWork(current, unitOfWork, renderLanes);
+    stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
+  } else {
+		// 走这里
+    next = beginWork(current, unitOfWork, renderLanes);
+  }
+  console.log('next',next)
+  resetCurrentDebugFiberInDEV();
+  unitOfWork.memoizedProps = unitOfWork.pendingProps;
+  if (next === null) {
+    // If this doesn't spawn new work, complete the current work.
+    completeUnitOfWork(unitOfWork);
+  } else {
+    workInProgress = next;
+  }
+
+  ReactCurrentOwner.current = null;
+}
+```
+
+参数 `unitOfWork` 为 `workInProgress`  
+
+首次渲染情况下，如果渲染以下页面：
+
+```jsx
+const jsx = (
+  <div className="box border" style={{ color: "red", lineHeight: "20px" }}>
+    <h2>ooo</h2>
+  </div>
+);
+```
+
+打印结果：
+
+```tsx
+workInProgress FiberNode {tag: 3, key: null, elementType: null, type: null, stateNode: FiberRootNode, …}
+next FiberNode {tag: 5, key: null, elementType: 'div', type: 'div', stateNode: null, …}
+workInProgress FiberNode {tag: 5, key: null, elementType: 'div', type: 'div', stateNode: null, …}
+next FiberNode {tag: 5, key: null, elementType: 'h2', type: 'h2', stateNode: null, …}
+workInProgress FiberNode {tag: 5, key: null, elementType: 'h2', type: 'h2', stateNode: null, …}
+next null
+```
+
+根据打印结果可以得到，`workLoopSync` 的 `while` 循环中的 `performUnitOfWork` 执行了三次：
+
+```tsx
+//1 FiberRootNode
+next = beginWork(current, unitOfWork, renderLanes);
+workInProgress = next;
+
+// 2
+next = beginWork(current, unitOfWork, renderLanes);
+workInProgress = next;
+
+// 3
+next = beginWork(current, unitOfWork, renderLanes);
+completeUnitOfWork(unitOfWork);
+```
+
+`beginWork` 函数用于执行组件的更新操作；接收两个参数：当前的 `fiber` 节点（`current`）和待更新的 `fiber` 节点（`workInProgress`）。
+
+调用 `reconcileChildren` 函数来处理子组件的更新，然后返回一个新的 fiber 节点，这个新节点包含了更新后的组件实例和属性。
+
+```jsx
+function beginWork(
+  current: Fiber | null, // rootFiber
+  workInProgress: Fiber, // 当前处理的 fiber
+  renderLanes: Lanes,
+): Fiber | null {
+  ···
+
+  // current 指向 alternate，不为 null 则表示不是首次渲染
+  if (current !== null) {
+    const oldProps = current.memoizedProps;
+    const newProps = workInProgress.pendingProps;
+
+    if (
+      oldProps !== newProps ||
+      hasLegacyContextChanged() ||
+      // Force a re-render if the implementation changed due to hot reload:
+      (__DEV__ ? workInProgress.type !== current.type : false)
+    ) {
+      // If props or context changed, mark the fiber as having performed work.
+      // This may be unset if the props are determined to be equal later (memo).
+      didReceiveUpdate = true;
+    } else {
+      // Neither props nor legacy context changes. Check if there's a pending
+      // update or context change.
+      const hasScheduledUpdateOrContext = checkScheduledUpdateOrContext(
+        current,
+        renderLanes,
+      );
+      if (
+        !hasScheduledUpdateOrContext &&
+        // If this is the second pass of an error or suspense boundary, there
+        // may not be work scheduled on `current`, so we check for this flag.
+        (workInProgress.flags & DidCapture) === NoFlags
+      ) {
+        // No pending updates or context. Bail out now.
+        didReceiveUpdate = false;
+        return attemptEarlyBailoutIfNoScheduledUpdate(
+          current,
+          workInProgress,
+          renderLanes,
+        );
+      }
+      if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {
+        // This is a special case that only exists for legacy mode.
+        // See https://github.com/facebook/react/pull/19216.
+        didReceiveUpdate = true;
+      } else {
+        // An update was scheduled on this fiber, but there are no new props
+        // nor legacy context. Set this to false. If an update queue or context
+        // consumer produces a changed value, it will set this to true. Otherwise,
+        // the component will assume the children have not changed and bail out.
+        didReceiveUpdate = false;
+      }
+    }
+  } else {
+		// 首次渲染
+		// 这个变量可以暂时不理会
+    didReceiveUpdate = false;
+
+	  ···
+  }
+
+  // Before entering the begin phase, clear pending update priority.
+  // TODO: This assumes that we're about to evaluate the component and process
+  // the update queue. However, there's an exception: SimpleMemoComponent
+  // sometimes bails out later in the begin phase. This indicates that we should
+  // move this assignment out of the common path and into each branch.
+  workInProgress.lanes = NoLanes;
+	// 根据当前 fiber 的类型对组件进行处理
+  switch (workInProgress.tag) {
+    ···
+    case FunctionComponent: {
+      const Component = workInProgress.type;
+      const unresolvedProps = workInProgress.pendingProps;
+      const resolvedProps =
+        workInProgress.elementType === Component
+          ? unresolvedProps
+          : resolveDefaultProps(Component, unresolvedProps);
+      return updateFunctionComponent(
+        current,
+        workInProgress,
+        Component,
+        resolvedProps,
+        renderLanes,
+      );
+    }
+    case ClassComponent: {
+      const Component = workInProgress.type;
+      const unresolvedProps = workInProgress.pendingProps;
+      const resolvedProps =
+        workInProgress.elementType === Component
+          ? unresolvedProps
+          : resolveDefaultProps(Component, unresolvedProps);
+      return updateClassComponent(
+        current,
+        workInProgress,
+        Component,
+        resolvedProps,
+        renderLanes,
+      );
+    }
+	  ···
+  }
+
+  throw new Error(
+    `Unknown unit of work tag (${workInProgress.tag}). This error is likely caused by a bug in ` +
+      'React. Please file an issue.',
+  );
+}
+```
+
+`completeUnitOfWork` 函数用于完成一个组件的遍历。在函数内部，会先检查 `workInProgress` 是否为 `null`，如果是，那么说明这个组件已经完成了所有的更新操作。
+
+Todo：继续深挖逻辑

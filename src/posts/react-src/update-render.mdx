@@ -1,0 +1,87 @@
+# 更新渲染
+
+指通过 `setState`，`forceUpdate` 等 API 引起的组件更新渲染。结果同初次渲染一样，通过 `scheduleUpdateOnFiber` 去让 scheduler 去处理渲染任务。
+
+## 类组件
+
+核心代码如下，总共一个变量三个函数：
+
+```jsx
+// react/packages/react-reconciler/src/ReactFiberClassComponent.old.js
+const classComponentUpdater = {
+  isMounted,
+	// setState 走这里
+  enqueueSetState(inst, payload, callback) {
+    ···
+  },
+	// 没有暴露的 api，目前仅在源码中一些老声明周期函数中会被用到
+  enqueueReplaceState(inst, payload, callback) {
+    ···
+  },
+	// forceUpdate 走这里
+  enqueueForceUpdate(inst, callback) {
+    ···
+  },
+};
+```
+
+子函数：
+
+```jsx
+enqueueSetState(inst, payload, callback) {
+    const fiber = getInstance(inst);
+    const eventTime = requestEventTime();
+    const lane = requestUpdateLane(fiber);
+
+    const update = createUpdate(eventTime, lane);
+    update.payload = payload;
+    if (callback !== undefined && callback !== null) {
+      if (__DEV__) {
+        warnOnInvalidCallback(callback, 'setState');
+      }
+      update.callback = callback;
+    }
+
+    const root = enqueueUpdate(fiber, update, lane);
+    if (root !== null) {
+      scheduleUpdateOnFiber(root, fiber, lane, eventTime);
+      entangleTransitions(root, fiber, lane);
+    }
+
+    ···
+},
+```
+
+`getInstance` ：获取组件的 fiber；
+
+其他逻辑和首次更新 `updateContainer` 的逻辑差不多，创建 `update`，入队，让 `scheduler` 调度执行。
+
+```jsx
+enqueueForceUpdate(inst, callback) {
+    const fiber = getInstance(inst);
+    const eventTime = requestEventTime();
+    const lane = requestUpdateLane(fiber);
+
+    const update = createUpdate(eventTime, lane);
+		// 标志强制更新
+    update.tag = ForceUpdate;
+
+    if (callback !== undefined && callback !== null) {
+      if (__DEV__) {
+        warnOnInvalidCallback(callback, 'forceUpdate');
+      }
+      update.callback = callback;
+    }
+
+    const root = enqueueUpdate(fiber, update, lane);
+    if (root !== null) {
+      scheduleUpdateOnFiber(root, fiber, lane, eventTime);
+      entangleTransitions(root, fiber, lane);
+    }
+
+    ···
+  },
+```
+
+## 函数组件
+todo

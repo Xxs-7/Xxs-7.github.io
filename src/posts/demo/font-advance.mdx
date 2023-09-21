@@ -13,7 +13,7 @@
 
 Next/font
 
-本博客使用了 NextJs，所以引用字体库可以有两种方式： nextJs 的 `next/font` 和 CSS 的 `@font-face` ，我尝试使用 nextJs 文档说**`[next/font](https://nextjs.org/docs/app/api-reference/components/font)`** ，但是阅读[文档](https://nextjs.org/docs/app/building-your-application/optimizing/fonts#preloading)后，只有这段话说出了好处，但其他地方都在说如何使用。“**optimally load web fonts with zero layout shift” ，**一开始以为是能够解决前面说的字体延迟生效问题，实际用了之后问题仍然存在，并且字体库没有分包，包体积也没有变化，文档中描述的使用好处和实际使用情况并未不是特别理想。
+本博客使用了 NextJs，所以引用字体库可以有两种方式： nextJs 的 `next/font` 和 CSS 的 `@font-face` ，我尝试使用 nextJs 文档[next/font](https://nextjs.org/docs/app/api-reference/components/font) ，但是阅读[文档](https://nextjs.org/docs/app/building-your-application/optimizing/fonts#preloading)后，只有这段话说出了好处，但其他地方都在说如何使用。“**optimally load web fonts with zero layout shift” ，**一开始以为是能够解决前面说的字体延迟生效问题，实际用了之后问题仍然存在，并且字体库没有分包，包体积也没有变化，文档中描述的使用好处和实际使用情况并未不是特别理想。
 
 > `next/font` includes **built-in automatic self-hosting** for *any* font file. This means you can **optimally load web fonts with zero layout shift**, thanks to the underlying CSS `size-adjust` property used.
 

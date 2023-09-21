@@ -9,7 +9,7 @@ scheduler 是一种在浏览器调度处理任务的性能优化方案的实现�
 - react 渲染任务如何传入 scheduler 被存储的？最小堆存放 task
 - 任务在哪个函数被执行，依次执行的顺序？
 - 执行任务让渡主线程的具体代码逻辑是什么？shouldYieldToHost
-- 任务执行的中断和回复
+- 任务执行的中断和恢复
 - 任务优先级参与的代码逻辑
 
 ## 任务调度
@@ -519,7 +519,7 @@ raf 是在帧间执行一次，而宏任务在帧间不一定只执行一个，�
 
 `shouldYieldToHost` 
 
-`navigator.scheduling.isInputPending API`是react 与Chrome团队合作的产物。
+`navigator.scheduling.isInputPending API`是 react 与 Chrome 团队合作的产物。
 ``` js
 function shouldYieldToHost(): boolean {
   const timeElapsed = getCurrentTime() - startTime;

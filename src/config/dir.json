@@ -43,6 +43,10 @@
       {
         "path": "hook",
         "title": "hook"
+      },
+      {
+        "path": "high-compoment",
+        "title": "组件逻辑复用方案"
       }
     ]
   },
@@ -54,10 +58,7 @@
         "path": "architecture",
         "title": "源码架构"
       },
-      {
-        "path": "virtual-dom",
-        "title": "虚拟 dom"
-      },
+
       {
         "path": "fiber-node",
         "title": "fiber 节点"
@@ -69,11 +70,27 @@
       {
         "path": "scheduler",
         "title": "scheduler"
+      },
+      {
+        "path": "first-render",
+        "title": "初次渲染"
+      },
+      {
+        "path": "update-render",
+        "title": "更新渲染"
+      },
+      {
+        "path": "render-task",
+        "title": "渲染任务的执行"
+      },
+      {
+        "path": "execution-context",
+        "title": "执行上下文"
       }
     ]
   },
   {
-    "title": "实践经验",
+    "title": "实践",
     "path": "demo",
     "routes": [
       {

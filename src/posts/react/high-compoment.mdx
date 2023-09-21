@@ -19,7 +19,6 @@ var ExampleComponent = React.createClass({
         return <div>{this.props.displayName}</div>
     }
 });
-链接：https://juejin.cn/post/6844903471162851342
 ```
 
 `ExampleComponent` 组件的`props`中都含有一个默认的`displayName`
@@ -53,9 +52,9 @@ Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了
 
 命名冲突：如果⾼阶组件多次嵌套而没有使⽤命名空间，就可能会产⽣冲突，覆盖⽼的属性
 
-不可⻅性：HoC 相当于在原有组件外层再包装⼀个组件，你有可能压根都不知道外层的包装是什么，对于你来说完全是⿊盒
+不可⻅性：Hoc 相当于在原有组件外层再包装⼀个组件，你有可能压根都不知道外层的包装是什么，对于你来说完全是⿊盒
 
-## **render props 模式**
+## render props 模式
 
 - 将要复用的 state 和操作 state 的方法封装到一个组件中
 - 对组件向外暴露 state 和操作state的方法(子组件向父组件传递数据)：调用 props 的 render 方法
@@ -106,10 +105,6 @@ Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了
 
 1. 有额外的学习成本（需要学习和区分类组件、函数组件）
 2. 写法上有限制（不能出现在条件、循环中），并且这种写法限制会增加代码重构时的成本
-3. 破坏了 PureComponent、React.memo 浅⽐较的性能优化效果（为了获取最新的 props 和 state，每次 render() 都要重新
-
-创建事件处理函数）
-
-1. 在闭包场景中可能会引⽤到旧的 state、props 值
-内部实现上不直观（依赖⼀份可变的全局状态，不再那么“纯”）
-2. React.memo 并不能完全替代 shouldComponentUpdate（因为获取不到 state 的变化，只针对 props 的变化）
+3. 破坏了 PureComponent、React.memo 浅⽐较的性能优化效果（为了获取最新的 props 和 state，每次 render() 都要重新创建事件处理函数）
+4. 在闭包场景中可能会引⽤到旧的 state、props 值，内部实现上不直观（依赖⼀份可变的全局状态，不再那么“纯”）
+5.. React.memo 并不能完全替代 shouldComponentUpdate（因为获取不到 state 的变化，只针对 props 的变化）

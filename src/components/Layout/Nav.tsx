@@ -17,15 +17,16 @@ export default function Nav() {
             <li className="mt-1" key={book.path}>
               <div
                 className={classNames(
-                  "pl-1 border border-transparent rounded-sm font-bold hover:bg-dark/5 text-lg hover:dark:bg-light/5",
+                  "pl-1 border border-transparent rounded-sm font-bold text-lg",
+                  //  hover:bg-dark/5  hover:dark:bg-light/5
                   {
                     "text-highlight": asPath === `${book.path}`,
                   }
                 )}
               >
-                <NextLink href={`${book.path}`} className="block">
-                  {book.title}
-                </NextLink>
+                {/* <NextLink href={`${book.path}`} className="block"> */}
+                {book.title}
+                {/* </NextLink> */}
               </div>
               <ul>
                 {book.routes.map((file) => {
