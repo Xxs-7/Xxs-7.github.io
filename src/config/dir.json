@@ -33,6 +33,16 @@
     ]
   },
   {
+    "title": "javascript",
+    "path": "javascript",
+    "routes": [
+      {
+        "path": "promise",
+        "title": "promise"
+      }
+    ]
+  },
+  {
     "title": "react",
     "path": "react",
     "routes": [
