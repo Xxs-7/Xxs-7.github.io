@@ -182,7 +182,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         break;
     }
 		// 核心逻辑是走到这里
-		// 调用 scheduleCallback，将渲染任务（具体为performConcurrentWorkOnRoot）作为 callback
+		// 调用 scheduleCallback，将渲染任务（具体为 performConcurrentWorkOnRoot）作为 callback
 		// 传入 scheduler 的 API ---- scheduleCallback，里面会创建 task，放入 taskQueue 等待调度执行
 		// 也就是所谓的渲染会在空闲时候执行
     newCallbackNode = scheduleCallback(
@@ -370,122 +370,42 @@ next = beginWork(current, unitOfWork, renderLanes);
 completeUnitOfWork(unitOfWork);
 ```
 
-`beginWork` 函数用于执行组件的更新操作；接收两个参数：当前的 `fiber` 节点（`current`）和待更新的 `fiber` 节点（`workInProgress`）。
+`performUnitOfWork` 就进入了 react 渲染任务的 render 阶段。
 
-调用 `reconcileChildren` 函数来处理子组件的更新，然后返回一个新的 fiber 节点，这个新节点包含了更新后的组件实例和属性。
+- `beginWork` 根据 current 判断这个工作单元能否复用，如果不能复用则更新, 根据当前工作单元的类型决定进入对应渲染逻辑（生成组件对应的 dom element）。
+- `completeUnitOfWork` 核心逻辑调用了 `completeWork`，将创建好对应的 dom 节点插入对应的父级节点的 dom 节点, 为其添加副作用标识, 在 commit 阶段将对应的节点展示到页面上并执行对应的副作用.
 
-```jsx
-function beginWork(
-  current: Fiber | null, // rootFiber
-  workInProgress: Fiber, // 当前处理的 fiber
-  renderLanes: Lanes,
-): Fiber | null {
+双缓存机制：
+- 当前页面显示内容对应的 vdom 树在 react 中称之为 current 树，即本次更新的上一次更新的树。
+- 首次更新或者触发更新后在内存中生成的树，称之为 WorkInProgress 树，即接下来页面显示内容对应的 vdom 树。
+
+每个工作单元（fiber）有两种渲染逻辑：mount 或者 update。
+
+具体逻辑可以看：[React-render阶段——beginWork](https://juejin.cn/post/6970603492167647240)，[React-render阶段——completeWork](https://juejin.cn/post/6977203911799406628)
+
+而 commit 阶段则是在
+``` js
+function performConcurrentWorkOnRoot(root, didTimeout) {
   ···
 
-  // current 指向 alternate，不为 null 则表示不是首次渲染
-  if (current !== null) {
-    const oldProps = current.memoizedProps;
-    const newProps = workInProgress.pendingProps;
+  let exitStatus = shouldTimeSlice
+    ? renderRootConcurrent(root, lanes)
+    : renderRootSync(root, lanes);
 
-    if (
-      oldProps !== newProps ||
-      hasLegacyContextChanged() ||
-      // Force a re-render if the implementation changed due to hot reload:
-      (__DEV__ ? workInProgress.type !== current.type : false)
-    ) {
-      // If props or context changed, mark the fiber as having performed work.
-      // This may be unset if the props are determined to be equal later (memo).
-      didReceiveUpdate = true;
-    } else {
-      // Neither props nor legacy context changes. Check if there's a pending
-      // update or context change.
-      const hasScheduledUpdateOrContext = checkScheduledUpdateOrContext(
-        current,
-        renderLanes,
-      );
-      if (
-        !hasScheduledUpdateOrContext &&
-        // If this is the second pass of an error or suspense boundary, there
-        // may not be work scheduled on `current`, so we check for this flag.
-        (workInProgress.flags & DidCapture) === NoFlags
-      ) {
-        // No pending updates or context. Bail out now.
-        didReceiveUpdate = false;
-        return attemptEarlyBailoutIfNoScheduledUpdate(
-          current,
-          workInProgress,
-          renderLanes,
-        );
-      }
-      if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {
-        // This is a special case that only exists for legacy mode.
-        // See https://github.com/facebook/react/pull/19216.
-        didReceiveUpdate = true;
-      } else {
-        // An update was scheduled on this fiber, but there are no new props
-        // nor legacy context. Set this to false. If an update queue or context
-        // consumer produces a changed value, it will set this to true. Otherwise,
-        // the component will assume the children have not changed and bail out.
-        didReceiveUpdate = false;
-      }
-    }
-  } else {
-		// 首次渲染
-		// 这个变量可以暂时不理会
-    didReceiveUpdate = false;
-
-	  ···
-  }
-
-  // Before entering the begin phase, clear pending update priority.
-  // TODO: This assumes that we're about to evaluate the component and process
-  // the update queue. However, there's an exception: SimpleMemoComponent
-  // sometimes bails out later in the begin phase. This indicates that we should
-  // move this assignment out of the common path and into each branch.
-  workInProgress.lanes = NoLanes;
-	// 根据当前 fiber 的类型对组件进行处理
-  switch (workInProgress.tag) {
+  if (exitStatus !== RootInProgress) {
     ···
-    case FunctionComponent: {
-      const Component = workInProgress.type;
-      const unresolvedProps = workInProgress.pendingProps;
-      const resolvedProps =
-        workInProgress.elementType === Component
-          ? unresolvedProps
-          : resolveDefaultProps(Component, unresolvedProps);
-      return updateFunctionComponent(
-        current,
-        workInProgress,
-        Component,
-        resolvedProps,
-        renderLanes,
-      );
+    if (exitStatus === RootDidNotComplete) {
+      ···
+    } else {
+      // The render completed.
+      ···
+      // 这里进入 commit 阶段
+      finishConcurrentRender(root, exitStatus, lanes);
     }
-    case ClassComponent: {
-      const Component = workInProgress.type;
-      const unresolvedProps = workInProgress.pendingProps;
-      const resolvedProps =
-        workInProgress.elementType === Component
-          ? unresolvedProps
-          : resolveDefaultProps(Component, unresolvedProps);
-      return updateClassComponent(
-        current,
-        workInProgress,
-        Component,
-        resolvedProps,
-        renderLanes,
-      );
-    }
-	  ···
   }
-
-  throw new Error(
-    `Unknown unit of work tag (${workInProgress.tag}). This error is likely caused by a bug in ` +
-      'React. Please file an issue.',
-  );
 }
 ```
 
-`completeUnitOfWork` 函数用于完成一个组件的遍历。在函数内部，会先检查 `workInProgress` 是否为 `null`，如果是，那么说明这个组件已经完成了所有的更新操作。
+commit 阶段可以参考 [React commit阶段解析](https://juejin.cn/post/7022236063280136206)
 
-Todo：继续深挖逻辑
+实际上，可中断指的是 render 阶段，commit 阶段不可中断。

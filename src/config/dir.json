@@ -41,6 +41,10 @@
         "title": "promise"
       },
       {
+        "path": "async-await",
+        "title": "async 和 await"
+      },
+      {
         "path": "execution-context",
         "title": "执行上下文"
       },

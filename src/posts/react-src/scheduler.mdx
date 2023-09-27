@@ -512,8 +512,8 @@ function shouldYieldToHost(): boolean {
 为什么不用微任务，`requestAnimationFrame` 或 `requestIdleCallback`?
 
 微任务是在本次事件循环里执行，如果产生的渲染任务是以微任务方式执行，那么必须产生的微任务都执行完毕才进入下一个宏任务。
-raf 是在帧间执行一次，而宏任务在帧间不一定只执行一个，可以执行多个最后再一起渲染。具体可以看这个分析 [React 之 requestAnimationFrame 执行机制探索](https://juejin.cn/post/7165780929439334437)
-`requestIdleCallback` 则是兼容性较差。
+raf 不属于微任务或宏任务，是在帧间执行一次，而宏任务在帧间不一定只执行一个，可以执行多个最后再一起渲染。具体可以看这个分析 [React 之 requestAnimationFrame 执行机制探索](https://juejin.cn/post/7165780929439334437)
+`requestIdleCallback` 是兼容性较差不适合在生产环境上，并且它实际上是在布局和绘制之后执行，那意味在里面做的事情（可能是通过数据修改触发dom修改）会重排。
 
 ### 让渡主线程
 
