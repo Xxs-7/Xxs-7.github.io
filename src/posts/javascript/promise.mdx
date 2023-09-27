@@ -2,37 +2,66 @@
 
 ## API
 
-Promise实例具有三种状态
+Promise 实例具有三种状态
 
 - pending 异步操作未完成
-- fulfilled 异步操作成功
-- rejected 异步操作失败
+- fulfilled 兑现，异步操作成功
+- rejected 拒绝，异步操作失败
 
 这三种状态的变化途径只有两种
 
-- 从pending 到 fulfilled
-- 从pending 到 rejected
+- 从 pending 到 fulfilled
+- 从 pending 到 rejected
 
 函数：
 
-- `Promise.resolve`：返回一个 fulfilled 的 Promise 对象
-- `Promise.reject`：返回一个 rejected 的 Promise 对象
-- `Promise.then`：制定 promise 执行结果的函数，包含 fulfilled 和 rejected
-- `Promise.all`：并行执行多个 promise，并等待所有 promise 都准备就绪
-- `Promise.allSettled`：如果任意的 promise reject，则 `Promise.all` 整个将会 reject
-- `Promise.race`：只等待第一个 settled 的 promise 并获取其结果（或 error）。
+- `Promise.then`：最多接受两个参数，用于 Promise 在 fulfilled 和 rejected 时的回调函数，返回一个等效的 Promise 对象。
+- `Promise.resolve`：使用给定 value 创建一个 resolved 的 promise。
+- `Promise.reject`：使用给定 error 创建一个 rejected 的 promise。
+- `Promise.all`：静态方法接受一个 Promise 可迭代对象（数组为可迭代对象），并返回一个 Promise。当所有输入的 Promise 都为 fulfilled 时，返回的 Promise 也将为 fulfilled；当任意一个 promise 被 reject，返回的 promise 就为 rejected，并且带有这个 error，所有其他 promise 的结果都会被忽略。
+- `Promise.allSettled`：返回保留所有 promise 的执行结果（settled 包含 fulfilled 和 rejected）的 promise。对于 `Promise.all` 如果任意的 promise reject，则其他 promise 的结果都会被忽略。
+- `Promise.race`：与 `Promise.all` 类似，但只等待第一个 settled 的 promise 并获取其结果（或 error）。
 - `Promise.any`与 `Promise.race` 类似，区别在于 `Promise.any` 只等待第一个 fulfilled 的 promise，并将这个 fulfilled 的 promise 返回。
 
 ## 问题
 
-### **Promise 会吃掉错误**
+### then 链式调用
+`then` 方法返回一个新的 Promise 实例，因此可以链式调用。后一个 `then` 方法接收前一个 `then` 方法的返回值作为参数，并且只会调用 resolve 函数。也就是无论前一个 promise 的状态如何，then 调用后返回的 promise 均为 fulfilled。
+``` js
+var promise = new Promise(function (resolve, reject) {
+  reject("ok");
+});
+promise
+  .then(
+    function (value) {
+      console.log("resolve", value);
+      return value;
+    },
+    function (value) {
+      console.log("reject", value);
+      return value;
+    }
+  )
+  .then(function (value) {
+    console.log("second", value);
+  })
+  .catch(() => console.log("promise catch err"));
+
+// 控制台输出
+// reject ok
+// second ok
+```
+
+有点 generator 的样子了。
+
+### Promise 会吃掉错误
 
 在浏览器中执行以下代码：
 
-```tsx
+```js
 const doAsyncThing = function () {
   return new Promise(function (resolve, reject) {
-    // 下面一行会报错，因为x没有声明
+    // 下面一行会报错，因为 x 没有声明
     throw new Error("test error");
   });
 };
@@ -96,7 +125,7 @@ promise
 ```jsx
 const doAsyncThing = function () {
   return new Promise(function (resolve, reject) {
-    // 下面一行会报错，因为x没有声明
+    // 下面一行会报错，因为 x 没有声明
     throw new Error("test error");
   });
 };
@@ -112,13 +141,6 @@ setTimeout(() => {
 ```
 
 链式调用 promise 时，写上 catch 是一个好习惯。
-
-### 异步的传染性
-
-有两种说法，均出现在用 `aysnc` 和 `await` 方式使用 promise 时，即异步转同步的写法：
-
-- 如果同时执行多个返回 promise 的函数，并且之间存在依赖，即上一个 promise 的结果是下一个 promise 的参数，那么所有 promise 的封装函数必须都写上 `async` 和 `await`
-- 如果一个底层函数使用了 async，那么所有基于它的所有调用链都必须使用 await 获取结果，或者使用 .then()。
 
 ## 手写 promise
 
@@ -168,12 +190,12 @@ class MyPromsie {
     }
 
     if (this.status === PENDING) {
-      // 如果promise的状态是 pending，需要将 onFulfilled 和 onRejected 函数存放起来，等待状态确定后，再依次将对应的函数执行
+      // 如果 promise 的状态是 pending，需要将 onFulfilled 和 onRejected 函数存放起来，等待状态确定后，再依次将对应的函数执行
       this.onResolvedCallbacks.push(() => {
         onFullfilled(this.value);
       });
 
-      // 如果promise的状态是 pending，需要将 onFulfilled 和 onRejected 函数存放起来，等待状态确定后，再依次将对应的函数执行
+      // 如果 promise 的状态是 pending，需要将 onFulfilled 和 onRejected 函数存放起来，等待状态确定后，再依次将对应的函数执行
       this.onRejectedCallbacks.push(() => {
         onRejected(this.reason);
       });
@@ -221,44 +243,60 @@ wrapFun(API).then(() => {
 });
 ```
 
-1. 实现最多 5 个接口并行请求。
+2. 实现最多 5 个并行请求。
 
 ```jsx
-function API() {
+// 在并行请求多张图片，由于 Chrome 浏览器的 network 模块最大能够同时发起 6 个请求
+// 如果超过可能会导致浏览器网络过载，从而影响页面加载性能
+// 例如在页面同时发起 20 个请求，发起请求就会占用内存，即使实际未被 network 模块处理。
+// 设计实现分批发送请求的功能，假设最多同时发起 6 个请求，需要处理的请求有很多个。
+let i = 0;
+let arr = new Array(18).fill("url");
+limitLoad(arr, 6);
+
+function API(url) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      resolve("ok");
+      // 假设 20% 可能性请求失败
+      if (Math.random() + 0.8 > 1) {
+        resolve("ok");
+      } else {
+        reject("error");
+      }
     }, 1000);
   });
 }
 
-let i = 0;
-let arr = new Array(20).fill(0);
-
 function limitLoad(requests, limit) {
-  const promises = requests.slice(0, limit).map((item, index) => {
-    return API().then(() => index);
+  const promises = requests.slice(0, limit).map((url, index) => {
+    return API(url).then(
+      () => index,
+      () => index
+    );
   });
 
   return requests
-    .reduce((pre, cur, index) => {
+    .reduce((pre, url, index) => {
       if (index < limit) {
         return pre;
       }
       return pre
         .then(() => Promise.race(promises))
-        .catch((err) => console.error(err))
         .then((idx) => {
           console.log(
             `第${idx}个位置的请求结束，将第${index}个接口放入,共${requests.length}个请求`
           );
-          promises[idx] = pro().then(() => idx);
-        });
+          promises[idx] = API(url).then(
+            () => index,
+            () => index
+          );
+        })
+        .catch((err) => console.error(err));
     }, Promise.resolve())
-    .then(() => Promise.all(promises));
+    .then(() => Promise.allSettled(promises))
+    .then((res) => console.log(res));
 }
-
-limitLoad(arr, 5);
+// 还可以再优化逻辑，将结果都记录
 ```
 
 ## 参考资料

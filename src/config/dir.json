@@ -39,6 +39,14 @@
       {
         "path": "promise",
         "title": "promise"
+      },
+      {
+        "path": "execution-context",
+        "title": "执行上下文"
+      },
+      {
+        "path": "scopes",
+        "title": "作用域"
       }
     ]
   },
@@ -94,8 +102,8 @@
         "title": "渲染任务的执行"
       },
       {
-        "path": "execution-context",
-        "title": "执行上下文"
+        "path": "context",
+        "title": "Context"
       }
     ]
   },

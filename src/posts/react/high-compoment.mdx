@@ -54,12 +54,12 @@ Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了
 
 不可⻅性：Hoc 相当于在原有组件外层再包装⼀个组件，你有可能压根都不知道外层的包装是什么，对于你来说完全是⿊盒
 
-## render props 模式
+## render props
 
 - 将要复用的 state 和操作 state 的方法封装到一个组件中
 - 对组件向外暴露 state 和操作state的方法(子组件向父组件传递数据)：调用 props 的 render 方法
     
-    ```
+ ``` js
     render() {
         return (
             <div>
@@ -68,12 +68,11 @@ Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了
             </div>
         )
     }
-    复制代码
     ```
     
 - 调用父组件传递进来的函数，把 state 和操作 state 的方法作为函数参数传递进去
     
-    ```
+    ``` js
     <div>
         <Counter
             render={(count, handleCount) => {
@@ -81,7 +80,6 @@ Ref 传递问题：Ref 被隔断。后来出现了 React.forwardRef 来解决了
             }}
         />
     </div>
-    复制代码
     ```
     
 缺点：
