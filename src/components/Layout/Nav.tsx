@@ -11,7 +11,7 @@ export default function Nav() {
 
   return (
     <nav>
-      <ul className="mt-6">
+      <ul className="mt-6 mb-12">
         <React.Suspense fallback={null}>
           {routes.map((book) => (
             <li className="mt-1" key={book.path}>

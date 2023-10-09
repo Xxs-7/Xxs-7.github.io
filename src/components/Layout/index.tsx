@@ -12,10 +12,10 @@ export default function Layout({ children }: ILayoutProps) {
         <Header />
       </header>
       <div className="pt-14 flex max-w-screen overflow-y-scroll">
-        <nav className="hidden lg:block fixed top-14 lg:bottom-0 lg:h-screen w-[18rem] pb-10 px-4 overflow-y-auto min-h-screen z-10">
+        <nav className="hidden lg:block fixed top-14 lg:bottom-0 lg:h-screen w-[18rem] pb-10 pl-4 overflow-y-auto min-h-screen z-10">
           <Nav />
         </nav>
-        <main className="relative lg:ml-[18rem] min-w-0 flex-1 px-5 ">
+        <main className="relative lg:ml-[18rem] min-w-0 flex-1 pl-1 pr-5 pb-6">
           {children}
         </main>
       </div>

@@ -59,8 +59,12 @@
     "path": "react",
     "routes": [
       {
+        "path": "roadmap",
+        "title": "学习路线"
+      },
+      {
         "path": "lifecycle",
-        "title": "lifecycle"
+        "title": "类组件生命周期"
       },
       {
         "path": "hook",
@@ -90,6 +94,10 @@
         "title": "渲染模式"
       },
       {
+        "path": "execution-context",
+        "title": "context"
+      },
+      {
         "path": "scheduler",
         "title": "scheduler"
       },
@@ -106,8 +114,8 @@
         "title": "渲染任务的执行"
       },
       {
-        "path": "context",
-        "title": "Context"
+        "path": "reconcile",
+        "title": "reconcile"
       }
     ]
   },
@@ -122,6 +130,26 @@
       {
         "path": "font-advance",
         "title": "字体库优化"
+      }
+    ]
+  },
+  {
+    "title": "资料",
+    "path": "material",
+    "routes": [
+      {
+        "path": "roadmap",
+        "title": "路线图"
+      }
+    ]
+  },
+  {
+    "title": "遐想",
+    "path": "opinion",
+    "routes": [
+      {
+        "path": "blog",
+        "title": "博客"
       }
     ]
   }
