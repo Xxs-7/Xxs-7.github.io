@@ -1,0 +1,103 @@
+---
+title: '层叠上下文'
+date: '2022-01-01'
+---
+
+# 层叠上下文 stacking-context
+
+层叠上下文决定了页面上的 HTML 元素在 Z 轴（垂直方向）上的层叠顺序。也就是页面上的元素的层叠顺序 stacking-order（谁在上面，谁在下面）受到层叠上下文的控制。
+
+元素的层叠顺序以其最接近的形成层叠上下文的父级元素为基准。
+
+## 形成层叠上下文
+
+以下这些元素会形成层叠上下文：
+> - 根元素：
+>  文档的根元素 html。
+> - position：  
+>  值为 absolute 或者 relative ，并且 z-index 的值不为 auto 的元素。  
+>  值为 fixed 或 sticky的元素（sticky可用于所有移动浏览器，但不适用于较旧的桌面浏览器）
+> - 容器：
+>  元素是flex容器的子元素，并且其z-index的值不是auto。
+> 元素是grid容器的子元素，并且其z-index值不是auto。
+> - opacity：
+>  opacity的值小于的元素1。
+> 还有几种不常见的。
+
+## 层叠规则
+
+同一层叠上下文中，元素按照如下顺序堆叠（从底到顶顺序）：
+
+1. 形成层叠上下文的元素的背景和边界
+2. 普通流里的元素 (没有 position 或者 position:static;即 non-positioned) 按 HTML 中的出现顺序堆叠
+3. non-positioned 的浮动（floated）元素，
+4. 定位元素（positioned）
+5. 根据 z-index 属性值确定层叠顺序的非定位元素（position: static），在同一层叠上下文中，具有较高 z-index 值的元素会覆盖具有较低 z-index 值的元素。
+
+<img src="/stacking-order.png" className="flex items-center" />
+
+实际主要用到是非 index 元素的层叠顺序和 index 元素的层叠顺序
+
+## demo
+
+positioned, float, non-positioned 元素的层叠顺序对比：
+``` HTML
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .container {
+        width: 200px;
+        height: 200px;
+        border: 1px solid black;
+      }
+      /* positoned 和 non-positioned */
+      .positoned {
+        width: 100px;
+        height: 100px;
+        position: relative;
+        right: -50px;
+        bottom: -50px;
+      }
+      .non-positioned {
+        width: 100px;
+        height: 100px;
+      }
+      /* float 和 non-positioned*/
+      .float {
+        width: 100px;
+        height: 100px;
+        float: left;
+      }
+
+      .red {
+        background-color: red;
+      }
+      .green {
+        background-color: green;
+      }
+      .blue {
+        background-color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="positoned red">positoned</div>
+      <div class="non-positioned green">non-positioned</div>
+    </div>
+    <div class="container">
+      <div class="float blue">float</div>
+      <div class="non-positioned green">non-positioned</div>
+    </div>
+    <div class="container">
+      <div class="positoned red">positoned</div>
+      <div class="float blue">float</div>
+    </div>
+  </body>
+</html>
+
+```
